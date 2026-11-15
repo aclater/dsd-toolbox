@@ -12,7 +12,7 @@ its GitHub releases and its milestones; for any detail, they win. Newest first. 
 |---|---|---|
 | [sacdfs](#sacdfs) | 0.6.3 (2026-11-13) | nothing recorded |
 | [pysacd](#pysacd) | 0.5.1 (2026-11-14) | nothing recorded |
-| [beets-pysacd](#beets-pysacd) | 0.2.1 (2026-11-14) | nothing recorded |
+| [beets-pysacd](#beets-pysacd) | 0.2.2 (2026-11-15) | nothing recorded |
 | [scarletbook-rs](#scarletbook-rs) | 0.5.8 (2026-11-05) | 0.6.0, then 1.0.0 |
 
 To keep this page current, each project's release checklist includes "update aclater/sacd
@@ -395,6 +395,14 @@ No unreleased entries in `CHANGELOG.md` and no open milestone at the time of wri
 
 Catalogue SACD images in place of deleted extracts, for sacdfs storage reclamation.
 
+- **0.2.2** ([notes](https://github.com/aclater/beets-pysacd/releases/tag/v0.2.2)), for libraries
+  with albums catalogued on a sacdfs mount:
+  - `sacd-migrate --mount DIR` moves albums catalogued on a sacdfs 0.4.0 mount to the names
+    sacdfs 0.4.1 shows for tracks with no title, so `beet update` no longer removes their items
+    after the mount is upgraded. Report-only unless `--apply`; items keep their ids and fields.
+  - Tag fields set by hand on catalogued items are no longer replaced by the mounted file's tags
+    at the next `beet update`.
+  - Tested on a throwaway library with files laid out like the mount; not against a real mount.
 - **0.2.1 is a security release** ([notes](https://github.com/aclater/beets-pysacd/releases/tag/v0.2.1))
   for users of `remove_iso` (off by default): an image could be deleted without having been
   imported, because "already in the library" is decided by a fingerprint of the TOCs and the size,
@@ -410,7 +418,9 @@ Catalogue SACD images in place of deleted extracts, for sacdfs storage reclamati
 - Disc fingerprints unchanged on pysacd 0.3.0, so no upgrade action; releases now carry offline
   verifiable build provenance (`.intoto.jsonl`).
 
-Releases: [0.2.0](https://github.com/aclater/beets-pysacd/releases/tag/v0.2.0) (2026-11-02).
+Releases: [0.2.0](https://github.com/aclater/beets-pysacd/releases/tag/v0.2.0) (2026-11-02),
+[0.2.1](https://github.com/aclater/beets-pysacd/releases/tag/v0.2.1) (2026-11-14),
+[0.2.2](https://github.com/aclater/beets-pysacd/releases/tag/v0.2.2) (2026-11-15).
 
 ### 0.1 line
 
