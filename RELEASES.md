@@ -11,7 +11,7 @@ its GitHub releases and its milestones; for any detail, they win. Newest first. 
 | Project | Latest release | In progress |
 |---|---|---|
 | [sacdfs](#sacdfs) | 0.6.3 (2026-11-13) | nothing recorded |
-| [pysacd](#pysacd) | 0.5.1 (2026-11-14) | nothing recorded |
+| [pysacd](#pysacd) | 0.5.2 (2026-11-15) | nothing recorded |
 | [beets-pysacd](#beets-pysacd) | 0.2.2 (2026-11-15) | nothing recorded |
 | [scarletbook-rs](#scarletbook-rs) | 0.5.8 (2026-11-05) | 0.6.0, then 1.0.0 |
 
@@ -297,6 +297,22 @@ Releases: [0.1.0](https://github.com/aclater/sacdfs/releases/tag/v0.1.0) (2026-1
 
 Trust in what shipped: the comparison with `sacd_extract` works in CI again.
 
+- **0.5.2** ([notes](https://github.com/aclater/pysacd/releases/tag/v0.5.2)): `pysacd-extract`
+  into a folder that already holds files, compatibility, and hardening after the 0.5.0 review.
+  - A disc's own files from an earlier run in another mode (`-e`, `-C`, another `-t`, `-k`) no
+    longer send the run to a second folder; two editions of an album, one with ISRCs and one
+    without, are kept apart; no track is written over another when names differ only in case; on
+    Windows a disc titled with a device name (`CON`) no longer fails the run.
+  - Blank and partly filled ISRC fields are written as `sacd_extract` writes them (tags, cue, XML,
+    `-P`).
+  - Cover downloads follow redirects only to the Cover Art Archive's hosts. The Linux wheels link
+    libFLAC 1.5.0 built from hash-checked source; the release workflow refuses a tag that is not
+    the package version on the default branch.
+  - Output unchanged: 0.5.1 against 0.5.2 on four real discs in 35 modes (140 runs), no
+    difference. One multichannel edit master differs from `sacd_extract` beyond the documented
+    exceptions, in both versions
+    ([pysacd#179](https://github.com/aclater/pysacd/issues/179)).
+  - macOS wheels: built for macOS 11 (arm64) and 10.13 (x86-64), run-tested on macOS 15 only.
 - **0.5.1 is a security release** ([notes](https://github.com/aclater/pysacd/releases/tag/v0.5.1)).
   A private review of 0.5.0 found three problems a crafted disc image can trigger, each with a
   published advisory: output placed outside the output folder
