@@ -6,11 +6,11 @@ step: it may change behaviour, and a patch release only adds or fixes.
 
 This page summarises public release notes only. The sources are each project's `CHANGELOG.md`,
 its GitHub releases and its milestones; for any detail, they win. Newest first. Last updated
-2026-11-14.
+2026-11-16.
 
 | Project | Latest release | In progress |
 |---|---|---|
-| [sacdfs](#sacdfs) | 0.6.3 (2026-11-13) | nothing recorded |
+| [sacdfs](#sacdfs) | 0.6.5 (2026-11-16) | 0.7.0 |
 | [pysacd](#pysacd) | 0.5.2 (2026-11-15) | nothing recorded |
 | [beets-pysacd](#beets-pysacd) | 0.2.2 (2026-11-15) | nothing recorded |
 | [scarletbook-rs](#scarletbook-rs) | 0.5.8 (2026-11-05) | 0.6.0, then 1.0.0 |
@@ -23,6 +23,34 @@ RELEASES.md".
 ### 0.6 line
 
 NAS deployment: start and stop at boot, one Compose file, plain start-up messages.
+
+**0.6.5** (2026-11-16):
+
+- A Windows front end, `sacdfs-win`, mounts the images as a drive letter through WinFsp; each
+  release has a Windows zip and a [Windows guide](https://github.com/aclater/sacdfs/blob/main/docs/install/windows.md)
+  ([#419](https://github.com/aclater/sacdfs/issues/419)). A macOS route over the Mac's own NFS client
+  builds from source; no macOS archive yet ([#420](https://github.com/aclater/sacdfs/issues/420)).
+- The container's NFS export works on hosts with kernels before 6.2, such as Debian 12 and
+  OpenMediaVault 7 ([#439](https://github.com/aclater/sacdfs/issues/439)).
+- A player beside copies, or starting beside them, stalls far less over SMB and NFS
+  ([#362](https://github.com/aclater/sacdfs/issues/362), [#363](https://github.com/aclater/sacdfs/issues/363));
+  under a memory limit of 256 MiB or more the frame cache is 32 MiB, and copies are 12 to 22 % faster
+  ([#271](https://github.com/aclater/sacdfs/issues/271)).
+- Tracks of padded, truncated or damaged images are clamped to the image's data
+  ([#402](https://github.com/aclater/sacdfs/issues/402)); I/O errors are logged with their cause and
+  rate-limited ([#339](https://github.com/aclater/sacdfs/issues/339)).
+
+Tested as 0.6.5-rc.1 against 0.6.4: a 2-hour soak on two machines, stop checks, release artifacts,
+audio identity, the real library's tree and memory, the installer on QNAP, Synology and TerraMaster
+in VMs, the container on Debian 12 with kernel 6.1, Tier 1 media servers, seven Linux client
+distributions, a player beside copies over SMB and NFS, and Windows 11 in a VM (native and SMB).
+macOS was not run. The first listing over NFS is 0.15 s slower for a 416-image library
+([#451](https://github.com/aclater/sacdfs/issues/451)).
+
+**0.6.4** (2026-11-14):
+
+- A security release: fixes for three advisories (open files, the installer, tags and report files)
+  and hardening of the installer, the container and the systemd unit. Audio is unchanged.
 
 **0.6.3** (2026-11-13):
 
