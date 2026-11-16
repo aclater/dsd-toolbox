@@ -12,6 +12,18 @@ decisions were made. It holds no code.
 **Board:** [SACD projects](https://github.com/users/aclater/projects/1) (open issues and PRs of all
 five repositories in one view).
 
+## Quick start
+
+Pick the project for what you want to do:
+
+| If you want to | Start with |
+|---|---|
+| Play your SACD images from a NAS or Linux computer, without extracting them | [sacdfs](https://github.com/aclater/sacdfs#quick-start) |
+| Read, extract or convert SACD images from the command line or Python | [pysacd](https://github.com/aclater/pysacd#quick-start) |
+| Import SACD images into a beets music library | [beets-pysacd](https://github.com/aclater/beets-pysacd#quick-start) |
+| Use the Rust library in your own program | [scarletbook-rs](https://github.com/aclater/scarletbook-rs) |
+| Write your own reader, or test one against the conformance corpus | [sacd-spec](https://github.com/aclater/sacd-spec#quick-start) |
+
 ## The projects
 
 | Project | What it is | Licence | Side of the wall |
