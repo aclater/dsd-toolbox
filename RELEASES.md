@@ -6,12 +6,12 @@ step: it may change behaviour, and a patch release only adds or fixes.
 
 This page summarises public release notes only. The sources are each project's `CHANGELOG.md`,
 its GitHub releases and its milestones; for any detail, they win. Newest first. Last updated
-2026-11-16.
+2026-11-21.
 
 | Project | Latest release | In progress |
 |---|---|---|
 | [sacdfs](#sacdfs) | 0.6.5 (2026-11-16) | 0.7.0 |
-| [pysacd](#pysacd) | 0.5.2 (2026-11-15) | nothing recorded |
+| [pysacd](#pysacd) | 0.5.3 (2026-11-21) | nothing recorded |
 | [beets-pysacd](#beets-pysacd) | 0.2.2 (2026-11-15) | nothing recorded |
 | [scarletbook-rs](#scarletbook-rs) | 0.5.8 (2026-11-05) | 0.6.0, then 1.0.0 |
 
@@ -325,6 +325,11 @@ Releases: [0.1.0](https://github.com/aclater/sacdfs/releases/tag/v0.1.0) (2026-1
 
 Trust in what shipped: the comparison with `sacd_extract` works in CI again.
 
+- **0.5.3** ([notes](https://github.com/aclater/pysacd/releases/tag/v0.5.3)): two
+  `pysacd-extract -z` cases are now byte-identical to `sacd_extract` ([#182](https://github.com/aclater/pysacd/issues/182),
+  [#183](https://github.com/aclater/pysacd/pull/183)), and the engine links scarletbook-rs 0.6.1
+  ([#188](https://github.com/aclater/pysacd/issues/188)).
+  - Checked on 5 real discs, 185 runs: other output unchanged from 0.5.2.
 - **0.5.2** ([notes](https://github.com/aclater/pysacd/releases/tag/v0.5.2)): `pysacd-extract`
   into a folder that already holds files, compatibility, and hardening after the 0.5.0 review.
   - A disc's own files from an earlier run in another mode (`-e`, `-C`, another `-t`, `-k`) no
@@ -372,6 +377,11 @@ Trust in what shipped: the comparison with `sacd_extract` works in CI again.
   informational benchmark job ([#123](https://github.com/aclater/pysacd/issues/123)) and tests
   Python 3.15 ([#132](https://github.com/aclater/pysacd/issues/132)).
 - Links scarletbook-rs 0.5.8: output and speed unchanged.
+
+Releases: [0.5.0](https://github.com/aclater/pysacd/releases/tag/v0.5.0) (2026-11-05),
+[0.5.1](https://github.com/aclater/pysacd/releases/tag/v0.5.1) (2026-11-14),
+[0.5.2](https://github.com/aclater/pysacd/releases/tag/v0.5.2) (2026-11-15),
+[0.5.3](https://github.com/aclater/pysacd/releases/tag/v0.5.3) (2026-11-21).
 
 ### 0.4 line
 
