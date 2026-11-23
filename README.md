@@ -17,19 +17,6 @@ repository is the map of how they fit together; it holds no code.
 | [pysacd](https://github.com/aclater/pysacd) | Python toolkit and `sacd_extract`-compatible extractor (DSF, DSDIFF, FLAC, WAV) with a C engine. Python 3.10 or later; wheels for Linux x86_64 and aarch64 (glibc 2.28 or later; musl on x86_64), macOS (Intel 10.13 or later, Apple Silicon 11 or later) and Windows x64 ([PyPI](https://pypi.org/project/pysacd/)) | GPL-2.0-or-later |
 | [beets-pysacd](https://github.com/aclater/beets-pysacd) | beets plugin: imports SACD images into a music library, MusicBrainz matching, DVD and Blu-ray audio cataloguing ([PyPI](https://pypi.org/project/beets-pysacd/)) | GPL-2.0-or-later |
 
-```
-                    sacd-spec  (specification + corpus)
-                        │
-                        ▼
-                  scarletbook-rs  (Rust library)
-                   │            │
-         Rust API  │            │  C ABI (scarletbook-ffi)
-                   ▼            ▼
-                sacdfs        pysacd
-                                │
-                                ▼
-                          beets-pysacd
-```
 
 ## Quick start
 
