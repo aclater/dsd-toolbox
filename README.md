@@ -1,4 +1,4 @@
-# SACD projects
+# DSD Toolbox
 
 > **Clean-room note:** this repository is outside the clean room. scarletbook-rs agents must not
 > read it or follow its links; the clean side gets requirements only through scarletbook-rs
@@ -9,7 +9,7 @@ clean-room Rust library built only from it, and the tools that use it. This repo
 map: what each project is for, how they fit together, where things stand and why the big
 decisions were made. It holds no code.
 
-**Board:** [SACD projects](https://github.com/users/aclater/projects/1) (open issues and PRs of all
+**Board:** [DSD Toolbox](https://github.com/users/aclater/projects/1) (open issues and PRs of all
 five repositories in one view).
 
 ## Quick start
