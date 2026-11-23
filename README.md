@@ -15,7 +15,7 @@ repository is the map of how they fit together; it holds no code.
 | sacd-spec | Implementation-free specification of SACD disc images, a synthetic conformance corpus, and the benchmark method and results | CC BY 4.0 (corpus CC0 1.0) | the wall itself | [repo](https://github.com/aclater/sacd-spec) |
 | scarletbook-rs | Clean-room Rust library: TOC, audio, DST decoding, C ABI; written only from sacd-spec | MIT OR Apache-2.0 | clean | [repo](https://github.com/aclater/scarletbook-rs) |
 | dsd2pcm-rs | DSD to PCM conversion and DSF, DFF and WAV reading and writing, as a Rust crate, a C library and a command-line tool | MIT OR Apache-2.0 | not clean | [repo](https://github.com/aclater/dsd2pcm-rs) |
-| sacdfs | Shows a folder of SACD images as DSF and WAV tracks to any player, without extracting them; Linux, NAS, Windows and macOS | GPL-3.0-or-later | not clean | [repo](https://github.com/aclater/sacdfs) |
+| sacdfs | Shows a folder of SACD images as DSF and WAV tracks to any player, without extracting them. Runs on Linux, including NAS systems; Windows 10 and 11, x64 (a read-only drive letter, with WinFsp); macOS 11 or later (Apple Silicon and Intel). Any other system can play the discs over SMB or NFS from a NAS or Linux computer that runs sacdfs | GPL-3.0-or-later | not clean | [repo](https://github.com/aclater/sacdfs) |
 | pysacd | Python toolkit and `sacd_extract`-compatible extractor (DSF, DSDIFF, FLAC, WAV) with a C engine | GPL-2.0-or-later | not clean | [repo](https://github.com/aclater/pysacd) · [PyPI](https://pypi.org/project/pysacd/) |
 | beets-pysacd | beets plugin: imports SACD images into a music library, MusicBrainz matching, DVD and Blu-ray audio cataloguing | GPL-2.0-or-later | not clean | [repo](https://github.com/aclater/beets-pysacd) · [PyPI](https://pypi.org/project/beets-pysacd/) |
 
@@ -37,8 +37,11 @@ repository is the map of how they fit together; it holds no code.
 
 Which project do you need?
 
-- **Play your SACD images** from a NAS, Linux, Windows or Mac computer without extracting them:
-  [sacdfs](https://github.com/aclater/sacdfs#quick-start).
+- **Play your SACD images** without extracting them:
+  [sacdfs](https://github.com/aclater/sacdfs#quick-start). It runs on Linux, including NAS
+  systems; Windows 10 and 11, x64, as a read-only drive letter with WinFsp; and macOS 11 or
+  later, Apple Silicon and Intel. Any other system can play the discs over SMB or NFS from a
+  NAS or Linux computer that runs sacdfs.
 - **Extract or convert images**, from the command line, Python or a beets library:
   [pysacd](https://github.com/aclater/pysacd#quick-start) and
   [beets-pysacd](https://github.com/aclater/beets-pysacd#quick-start).
