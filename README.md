@@ -16,10 +16,10 @@ many times faster than real time on any recent desktop CPU.
 |---|---|
 | [sacdfs](https://github.com/aclater/sacdfs) | Plays SACD images as DSF and WAV tracks in any player, without extracting them (Linux, NAS, Windows, macOS) |
 | [pysacd](https://github.com/aclater/pysacd) | Extracts and converts SACD images to DSF, DSDIFF, FLAC or WAV, from the command line or Python |
-| [beets-pysacd](https://github.com/aclater/beets-pysacd) | Imports SACD images into a beets music library, with MusicBrainz matching |
-| [scarletbook-rs](https://github.com/aclater/scarletbook-rs) | Rust and C library that reads SACD images and decodes DST |
-| [dsd2pcm-rs](https://github.com/aclater/dsd2pcm-rs) | Rust and C library and CLI: DSD to PCM, and DSF, DFF and WAV files |
-| [sacd-spec](https://github.com/aclater/sacd-spec) | Specification of the SACD disc format, with a test corpus |
+| [beets‑pysacd](https://github.com/aclater/beets-pysacd) | Imports SACD images into a beets music library, with MusicBrainz matching |
+| [scarletbook‑rs](https://github.com/aclater/scarletbook-rs) | Rust and C library that reads SACD images and decodes DST |
+| [dsd2pcm‑rs](https://github.com/aclater/dsd2pcm-rs) | Rust and C library and CLI: DSD to PCM, and DSF, DFF and WAV files |
+| [sacd‑spec](https://github.com/aclater/sacd-spec) | Specification of the SACD disc format, with a test corpus |
 
 
 ## Quick start
