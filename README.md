@@ -6,6 +6,10 @@ Open tools for reading Super Audio CD disc images and DSD audio: a specification
 scratch, a Rust library built from it, and the tools that use it. This
 repository is the map of how they fit together; it holds no code.
 
+They are built for speed: sacdfs decodes stereo and multichannel DST-compressed discs to DSF in
+real time even on a 2011 dual-core 32-bit Atom D2700 NAS, and the conversion libraries run
+many times faster than real time on any recent desktop CPU.
+
 ## Projects
 
 | Project | What | Licence |
