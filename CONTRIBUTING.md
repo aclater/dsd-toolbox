@@ -1,11 +1,12 @@
 # Contributing
 
+How changes are reviewed and released is in [docs/ci-cd.md](docs/ci-cd.md).
 
 ## Issues: milestones, labels and claiming
 
 Every open issue says which release it is for, how important it is, where it stands, and
-what kind of agent should work on it. This repository holds the overview; the same scheme applies to every SACD project repository. The issue list then shows what's up without opening
-each issue.
+what kind of agent should work on it. This repository holds the overview; the same scheme applies to every DSD Toolbox project
+repository. The issue list then shows what's up without opening each issue.
 
 - **Milestone:** the release it is planned for (`0.2.0`, `0.3.0`, ...) or `Later`. Umbrella
   issues have no milestone.
