@@ -16,6 +16,7 @@ its GitHub releases and its milestones; for any detail, they win. Newest first. 
 | [beets-pysacd](#beets-pysacd) | 0.2.2 (2026-11-15) | nothing recorded |
 | [scarletbook-rs](#scarletbook-rs) | 1.0.1 (2026-11-23) | nothing recorded |
 | [dsd2pcm-rs](#dsd2pcm-rs) | 0.1.1 (2026-11-23) | nothing recorded |
+| [dsd-measure](#dsd-measure) | 0.1.0 (2026-11-23) | nothing recorded |
 
 To keep this page current, each project's release checklist includes "update aclater/dsd-toolbox
 RELEASES.md".
@@ -668,3 +669,9 @@ and Windows x86_64.
 
 Releases: [0.1.0](https://github.com/aclater/dsd2pcm-rs/releases/tag/v0.1.0) (2026-11-23),
 [0.1.1](https://github.com/aclater/dsd2pcm-rs/releases/tag/v0.1.1) (2026-11-23).
+
+## dsd-measure
+
+### 0.1 line
+
+- **0.1.0 (2026-11-23):** first release. One command measures a DSD to PCM converter or a PCM to DSD modulator with 19 audiophile-style tests and writes one readable report; the reference chain's own floor is about -147 dB at DSD64; pinned black-box containers for SoX-DSD, sacd_extract and FFmpeg.
