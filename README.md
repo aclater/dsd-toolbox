@@ -4,35 +4,20 @@
 > read it or follow its links; the clean side gets requirements only through scarletbook-rs
 > issues. (An owner-directed read on 2026-11-01 is recorded in scarletbook-rs#155.)
 
-Open tools for reading Super Audio CD disc images: a specification written from scratch, a
-clean-room Rust library built only from it, and the tools that use it. This repository is the
-map: what each project is for, how they fit together, where things stand and why the big
-decisions were made. It holds no code.
+Open tools for reading Super Audio CD disc images and DSD audio: a specification written from
+scratch, a clean-room Rust library built only from it, and the tools that use it. This
+repository is the map of how they fit together; it holds no code.
 
-**Board:** [DSD Toolbox](https://github.com/users/aclater/projects/1) (open issues and PRs of all
-five repositories in one view).
+## Projects
 
-## Quick start
-
-Pick the project for what you want to do:
-
-| If you want to | Start with |
-|---|---|
-| Play your SACD images from a NAS or Linux computer, without extracting them | [sacdfs](https://github.com/aclater/sacdfs#quick-start) |
-| Read, extract or convert SACD images from the command line or Python | [pysacd](https://github.com/aclater/pysacd#quick-start) |
-| Import SACD images into a beets music library | [beets-pysacd](https://github.com/aclater/beets-pysacd#quick-start) |
-| Use the Rust library in your own program | [scarletbook-rs](https://github.com/aclater/scarletbook-rs) |
-| Write your own reader, or test one against the conformance corpus | [sacd-spec](https://github.com/aclater/sacd-spec#quick-start) |
-
-## The projects
-
-| Project | What it is | Licence | Side of the wall |
-|---|---|---|---|
-| [sacd-spec](https://github.com/aclater/sacd-spec) | Implementation-free specification of SACD disc images, plus a synthetic conformance corpus and the benchmark method and results | CC BY 4.0 (corpus CC0) | the wall itself |
-| [scarletbook-rs](https://github.com/aclater/scarletbook-rs) | Clean-room Rust library: TOC, audio, DST decoding, C ABI; written only from sacd-spec | MIT OR Apache-2.0 | clean |
-| [pysacd](https://github.com/aclater/pysacd) | Python toolkit and `sacd_extract`-compatible extractor (DSF, DSDIFF, FLAC, WAV), C engine; on [PyPI](https://pypi.org/project/pysacd/) | GPL-2.0-or-later | not clean |
-| [beets-pysacd](https://github.com/aclater/beets-pysacd) | beets plugin: imports SACD images into a music library, MusicBrainz matching, DVD/Blu-ray audio cataloguing; on [PyPI](https://pypi.org/project/beets-pysacd/) | GPL-2.0-or-later | not clean |
-| [sacdfs](https://github.com/aclater/sacdfs) | Read-only FUSE filesystem: mount a folder of images and browse every track as DSF (WAV in progress), decoded on demand by scarletbook | GPL-3.0-or-later | not clean |
+| Project | What | Licence | Side of the wall | Links |
+|---|---|---|---|---|
+| sacd-spec | Implementation-free specification of SACD disc images, a synthetic conformance corpus, and the benchmark method and results | CC BY 4.0 (corpus CC0 1.0) | the wall itself | [repo](https://github.com/aclater/sacd-spec) |
+| scarletbook-rs | Clean-room Rust library: TOC, audio, DST decoding, C ABI; written only from sacd-spec | MIT OR Apache-2.0 | clean | [repo](https://github.com/aclater/scarletbook-rs) |
+| dsd2pcm-rs | DSD to PCM conversion and DSF, DFF and WAV reading and writing, as a Rust crate, a C library and a command-line tool | MIT OR Apache-2.0 | not clean | [repo](https://github.com/aclater/dsd2pcm-rs) |
+| sacdfs | Shows a folder of SACD images as DSF and WAV tracks to any player, without extracting them. Runs on Linux, including NAS systems; Windows 10 and 11, x64 (a read-only drive letter, with WinFsp); macOS 11 or later (Apple Silicon and Intel). Any other system can play the discs over SMB or NFS from a NAS or Linux computer that runs sacdfs | GPL-3.0-or-later | not clean | [repo](https://github.com/aclater/sacdfs) |
+| pysacd | Python toolkit and `sacd_extract`-compatible extractor (DSF, DSDIFF, FLAC, WAV) with a C engine | GPL-2.0-or-later | not clean | [repo](https://github.com/aclater/pysacd) · [PyPI](https://pypi.org/project/pysacd/) |
+| beets-pysacd | beets plugin: imports SACD images into a music library, MusicBrainz matching, DVD and Blu-ray audio cataloguing | GPL-2.0-or-later | not clean | [repo](https://github.com/aclater/beets-pysacd) · [PyPI](https://pypi.org/project/beets-pysacd/) |
 
 ```
                     sacd-spec  (specification + corpus)
@@ -42,11 +27,28 @@ Pick the project for what you want to do:
                    │            │
          Rust API  │            │  C ABI (scarletbook-ffi)
                    ▼            ▼
-                sacdfs        pysacd  (will switch its engine to scarletbook)
+                sacdfs        pysacd
                                 │
                                 ▼
                           beets-pysacd
 ```
+
+## Quick start
+
+Which project do you need?
+
+- **Play your SACD images** without extracting them:
+  [sacdfs](https://github.com/aclater/sacdfs#quick-start). It runs on Linux, including NAS
+  systems; Windows 10 and 11, x64, as a read-only drive letter with WinFsp; and macOS 11 or
+  later, Apple Silicon and Intel. Any other system can play the discs over SMB or NFS from a
+  NAS or Linux computer that runs sacdfs.
+- **Extract or convert images**, from the command line, Python or a beets library:
+  [pysacd](https://github.com/aclater/pysacd#quick-start) and
+  [beets-pysacd](https://github.com/aclater/beets-pysacd#quick-start).
+- **Build your own software**: the Rust library [scarletbook-rs](https://github.com/aclater/scarletbook-rs)
+  for SACD images, [dsd2pcm-rs](https://github.com/aclater/dsd2pcm-rs#quick-start) for DSD to PCM
+  and DSF/DFF/WAV files, or [sacd-spec](https://github.com/aclater/sacd-spec#quick-start) to
+  write or test a reader of your own.
 
 ## The clean-room wall
 
@@ -66,42 +68,19 @@ Rules that keep it intact:
   published in sacd-spec.
 - This repository is a description, not an input to the clean side.
 
-## Where things stand (2026-10-31)
+## Documentation
 
-- **scarletbook 0.3.0:** passes the whole corpus and real-disc hash checks. DST decoding 0.171 ms
-  per frame on one core (4.0x `sacd_extract`); 2.8x to 3.5x `sacd_extract` with all cores.
-  Working towards 1.0: interface stability, seeking, concurrent reads, channel assignment,
-  patent hygiene review.
-- **pysacd 0.2.2** and **beets-pysacd 0.1.2:** released; pysacd's own DST decoder is 2.4x to 3.0x
-  `sacd_extract`.
-- **sacdfs:** reads are bit-identical to extraction; reading a whole disc through the mount is
-  faster than `sacd_extract` extracting it. WAV output under way; FLAC deferred.
+- [Decisions](DECISIONS.md): the major decisions and why they were made
+- [Releases](RELEASES.md): what each minor version line brought, per project
+- [Quality](QUALITY.md): the checks against bugs, regressions, leaks and supply-chain problems,
+  and the known gaps
+- [Security](SECURITY.md): how to report a vulnerability in any of the projects (privately,
+  never in a public issue)
+- [Contributing](CONTRIBUTING.md)
+- [Board](https://github.com/users/aclater/projects/1): open issues and pull requests of the
+  projects in one view
 
-Full figures: [sacd-spec benchmarks](https://github.com/aclater/sacd-spec/blob/main/benchmarks/README.md).
+## Licence and credits
 
-## Roadmap
-
-1. **sacdfs 0.4.1** (released 2026-11-06): the `verify` safety fix, hidden non-SACD folders, names for
-   discs without text, tested against the [release test plan](https://github.com/aclater/sacdfs/blob/main/docs/test-plan.md).
-2. **sacdfs 0.5.0:** faster reads through the mount, same-host deployment, on-demand tag lookups.
-3. **scarletbook 0.6.0, then 1.0:** performance, then a frozen interface and the patent-hygiene review.
-4. **Final scarletbook test**, once every scarletbook-rs issue and PR is resolved: correctness on
-   all builds, an idle-machine round, a head-to-head of every tool, a whole-library survey.
-
-## Quality
-
-Every check the projects run against bugs, regressions, leaks, supply-chain problems and bad
-releases, with links to where each is implemented, and the known gaps: [QUALITY.md](QUALITY.md).
-
-## Security
-
-Where to report a vulnerability in any of the projects, what to expect, and how reports are
-handled: [SECURITY.md](SECURITY.md). Please report privately, never in a public issue.
-
-## Releases
-
-What each minor version line brought, per project, newest first: [RELEASES.md](RELEASES.md).
-
-## Decisions
-
-The major decisions and why they were made: [DECISIONS.md](DECISIONS.md).
+This repository holds documentation only. Each project has its own licence, listed in
+[Projects](#projects), and credits its upstreams in its own README.
