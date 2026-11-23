@@ -1,3 +1,5 @@
+<img src="https://raw.githubusercontent.com/aclater/dsd-toolbox/main/docs/assets/icon-256.png" alt="" width="96">
+
 # DSD Toolbox
 
 > scarletbook-rs contributors: please don't read this repository ([why](docs/clean-room.md#for-scarletbook-rs-contributors)).
@@ -12,14 +14,14 @@ many times faster than real time on any recent desktop CPU.
 
 ## Projects
 
-| Project | What |
-|---|---|
-| [sacdfs](https://github.com/aclater/sacdfs) | Plays SACD images as DSF and WAV tracks in any player, without extracting them (Linux, NAS, Windows, macOS) |
-| [pysacd](https://github.com/aclater/pysacd) | Extracts and converts SACD images to DSF, DSDIFF, FLAC or WAV, from the command line or Python |
-| [beets‑pysacd](https://github.com/aclater/beets-pysacd) | Imports SACD images into a beets music library, with MusicBrainz matching |
-| [scarletbook‑rs](https://github.com/aclater/scarletbook-rs) | Rust and C library that reads SACD images and decodes DST |
-| [dsd2pcm‑rs](https://github.com/aclater/dsd2pcm-rs) | Rust and C library and CLI: DSD to PCM, and DSF, DFF and WAV files |
-| [sacd‑spec](https://github.com/aclater/sacd-spec) | Specification of the SACD disc format, with a test corpus |
+|  | Project | What |
+|---|---|---|
+| <img src="https://raw.githubusercontent.com/aclater/sacdfs/main/docs/assets/icon-64.png" alt="" width="32"> | [sacdfs](https://github.com/aclater/sacdfs) | Plays SACD images as DSF and WAV tracks in any player, without extracting them (Linux, NAS, Windows, macOS) |
+| <img src="https://raw.githubusercontent.com/aclater/pysacd/master/docs/assets/icon-64.png" alt="" width="32"> | [pysacd](https://github.com/aclater/pysacd) | Extracts and converts SACD images to DSF, DSDIFF, FLAC or WAV, from the command line or Python |
+| <img src="https://raw.githubusercontent.com/aclater/beets-pysacd/main/docs/assets/icon-64.png" alt="" width="32"> | [beets‑pysacd](https://github.com/aclater/beets-pysacd) | Imports SACD images into a beets music library, with MusicBrainz matching |
+| <img src="https://raw.githubusercontent.com/aclater/dsd-toolbox/main/docs/assets/projects/scarletbook-rs-64.png" alt="" width="32"> | [scarletbook‑rs](https://github.com/aclater/scarletbook-rs) | Rust and C library that reads SACD images and decodes DST |
+| <img src="https://raw.githubusercontent.com/aclater/dsd2pcm-rs/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd2pcm‑rs](https://github.com/aclater/dsd2pcm-rs) | Rust and C library and CLI: DSD to PCM, and DSF, DFF and WAV files |
+| <img src="https://raw.githubusercontent.com/aclater/dsd-toolbox/main/docs/assets/projects/sacd-spec-64.png" alt="" width="32"> | [sacd‑spec](https://github.com/aclater/sacd-spec) | Specification of the SACD disc format, with a test corpus |
 
 
 ## Quick start
