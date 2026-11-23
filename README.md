@@ -16,7 +16,7 @@ repository is the map of how they fit together; it holds no code.
 | scarletbook-rs | Clean-room Rust library: TOC, audio, DST decoding, C ABI; written only from sacd-spec | MIT OR Apache-2.0 | clean | [repo](https://github.com/aclater/scarletbook-rs) |
 | dsd2pcm-rs | DSD to PCM conversion and DSF, DFF and WAV reading and writing, as a Rust crate, a C library and a command-line tool | MIT OR Apache-2.0 | not clean | [repo](https://github.com/aclater/dsd2pcm-rs) |
 | sacdfs | Shows a folder of SACD images as DSF and WAV tracks to any player, without extracting them. Runs on Linux, including NAS systems; Windows 10 and 11, x64 (a read-only drive letter, with WinFsp); macOS 11 or later (Apple Silicon and Intel). Any other system can play the discs over SMB or NFS from a NAS or Linux computer that runs sacdfs | GPL-3.0-or-later | not clean | [repo](https://github.com/aclater/sacdfs) |
-| pysacd | Python toolkit and `sacd_extract`-compatible extractor (DSF, DSDIFF, FLAC, WAV) with a C engine | GPL-2.0-or-later | not clean | [repo](https://github.com/aclater/pysacd) · [PyPI](https://pypi.org/project/pysacd/) |
+| pysacd | Python toolkit and `sacd_extract`-compatible extractor (DSF, DSDIFF, FLAC, WAV) with a C engine. Python 3.10 or later; wheels for Linux x86_64 and aarch64 (glibc 2.28 or later; musl on x86_64), macOS (Intel 10.13 or later, Apple Silicon 11 or later) and Windows x64 | GPL-2.0-or-later | not clean | [repo](https://github.com/aclater/pysacd) · [PyPI](https://pypi.org/project/pysacd/) |
 | beets-pysacd | beets plugin: imports SACD images into a music library, MusicBrainz matching, DVD and Blu-ray audio cataloguing | GPL-2.0-or-later | not clean | [repo](https://github.com/aclater/beets-pysacd) · [PyPI](https://pypi.org/project/beets-pysacd/) |
 
 ```
@@ -44,7 +44,9 @@ Which project do you need?
   NAS or Linux computer that runs sacdfs.
 - **Extract or convert images**, from the command line, Python or a beets library:
   [pysacd](https://github.com/aclater/pysacd#quick-start) and
-  [beets-pysacd](https://github.com/aclater/beets-pysacd#quick-start).
+  [beets-pysacd](https://github.com/aclater/beets-pysacd#quick-start). pysacd needs Python 3.10
+  or later and has wheels for Linux (x86_64 and aarch64), macOS (Intel and Apple Silicon) and
+  Windows x64.
 - **Build your own software**: the Rust library [scarletbook-rs](https://github.com/aclater/scarletbook-rs)
   for SACD images, [dsd2pcm-rs](https://github.com/aclater/dsd2pcm-rs#quick-start) for DSD to PCM
   and DSF/DFF/WAV files, or [sacd-spec](https://github.com/aclater/sacd-spec#quick-start) to
