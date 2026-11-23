@@ -2,23 +2,70 @@
 
 A running summary of what each minor version line of each project brought, so progress can be
 followed by major step and not only by point release. Below 1.0 the minor version is the major
-step: it may change behaviour, and a patch release only adds or fixes.
+step: it may change behaviour, and a patch release only adds or fixes. From 1.0, as in
+scarletbook-rs, the usual semantic-versioning rules apply.
 
 This page summarises public release notes only. The sources are each project's `CHANGELOG.md`,
 its GitHub releases and its milestones; for any detail, they win. Newest first. Last updated
-2026-11-21.
+2026-11-23.
 
 | Project | Latest release | In progress |
 |---|---|---|
-| [sacdfs](#sacdfs) | 0.6.5 (2026-11-16) | 0.7.0 |
+| [sacdfs](#sacdfs) | 0.7.2 (2026-11-22) | 0.8.0 |
 | [pysacd](#pysacd) | 0.5.5 (2026-11-23) | nothing recorded |
 | [beets-pysacd](#beets-pysacd) | 0.2.2 (2026-11-15) | nothing recorded |
-| [scarletbook-rs](#scarletbook-rs) | 0.5.8 (2026-11-05) | 0.6.0, then 1.0.0 |
+| [scarletbook-rs](#scarletbook-rs) | 1.0.1 (2026-11-23) | nothing recorded |
+| [dsd2pcm-rs](#dsd2pcm-rs) | 0.1.1 (2026-11-23) | nothing recorded |
 
 To keep this page current, each project's release checklist includes "update aclater/dsd-toolbox
 RELEASES.md".
 
 ## sacdfs
+
+### 0.7 line
+
+Players on slow NAS units and more ways to install: start-of-track decode-ahead, Linux packages,
+macOS archives and a 32-bit x86 build.
+
+**0.7.2** (2026-11-22), with security fixes; upgrading is recommended:
+
+- An image file replaced or rewritten while mounted has its disc layout read again before anything
+  is read from the new file.
+- `sacdfs-nfs` bounds calls and unwritten replies per connection, and closes an idle connection
+  when a new one is waiting for a place.
+- A player that re-reads an album's heads at each track start no longer has them decoded again
+  ([#456](https://github.com/aclater/sacdfs/issues/456)): on cores limited to an Atom's speed, a
+  start after the idle release opens its track in about 0.25 s instead of 3.6 s.
+- Code acceptance rules in CONTRIBUTING.md, each enforced by a CI check (ShellCheck, ruff,
+  equal copies, container hardening, function length, performance lints).
+
+**0.7.1** (2026-11-22), with security fixes; upgrading is recommended:
+
+- A full code review: readability, tests and CI checks, small bug fixes, and hardening of the
+  installer (it verifies release files beside it against built-in checksums) and the container.
+- A static 32-bit x86 build for Pentium 4, Atom and later
+  ([#488](https://github.com/aclater/sacdfs/issues/488)); the fuzz targets also run as 32-bit
+  programs ([#498](https://github.com/aclater/sacdfs/issues/498)).
+- Players starting a track on slow CPUs get the start decoded ahead
+  ([#504](https://github.com/aclater/sacdfs/issues/504)), and a CI gate replays real players'
+  read patterns and fails on new stalls ([#506](https://github.com/aclater/sacdfs/issues/506)).
+- On TrueNAS, TrueNAS's own SMB service can share the mount on port 445
+  ([#522](https://github.com/aclater/sacdfs/issues/522)).
+
+**0.7.0** (2026-11-19), tested as two release candidates:
+
+- `.rpm` and `.deb` packages for x86_64 and aarch64 ([#460](https://github.com/aclater/sacdfs/issues/460)),
+  and macOS archives for Apple Silicon and Intel (mounted through the Mac's own NFS client).
+- The start of a track is decoded ahead when a player starts it from stopped
+  ([#481](https://github.com/aclater/sacdfs/issues/481)); a read trace (`-vv`) and a replay script
+  for player problems ([#456](https://github.com/aclater/sacdfs/issues/456)).
+- `sacdfs tags fetch --acoustid` looks discs up by audio fingerprint; `sacdfs verify` recognises
+  gapless chains ([#442](https://github.com/aclater/sacdfs/issues/442)).
+- scarletbook 0.6.0 and 0.6.1. DSF bytes are those of 0.6.5; WAV output version 5.
+
+Releases: [0.7.0](https://github.com/aclater/sacdfs/releases/tag/v0.7.0) (2026-11-19),
+[0.7.1](https://github.com/aclater/sacdfs/releases/tag/v0.7.1) (2026-11-22),
+[0.7.2](https://github.com/aclater/sacdfs/releases/tag/v0.7.2) (2026-11-22).
 
 ### 0.6 line
 
@@ -389,7 +436,9 @@ Trust in what shipped: the comparison with `sacd_extract` works in CI again.
 Releases: [0.5.0](https://github.com/aclater/pysacd/releases/tag/v0.5.0) (2026-11-05),
 [0.5.1](https://github.com/aclater/pysacd/releases/tag/v0.5.1) (2026-11-14),
 [0.5.2](https://github.com/aclater/pysacd/releases/tag/v0.5.2) (2026-11-15),
-[0.5.3](https://github.com/aclater/pysacd/releases/tag/v0.5.3) (2026-11-21).
+[0.5.3](https://github.com/aclater/pysacd/releases/tag/v0.5.3) (2026-11-21),
+[0.5.4](https://github.com/aclater/pysacd/releases/tag/v0.5.4) (2026-11-23),
+[0.5.5](https://github.com/aclater/pysacd/releases/tag/v0.5.5) (2026-11-23).
 
 ### 0.4 line
 
@@ -502,17 +551,53 @@ Releases: [0.1.0](https://github.com/aclater/beets-pysacd/releases/tag/v0.1.0) (
 
 Summarised from its public GitHub release notes and milestones only.
 
-### In progress: 0.6.0, then 1.0.0
+### 1.0 line
 
-Milestone 0.6.0 (open) lists performance work: plain-DSD area to file (#202), DST decode against
-a reference implementation (#203), a deep performance cycle (#224), a CI benchmark subset
-(#226), and integration follow-ups (#216, #228). Milestone 1.0.0 depends on the interface
-freeze (#39, via 0.6.0 and one consumer cycle) and the patent-hygiene review (#40).
+The interface is frozen under semantic versioning: no breaking change without 2.0.0. The C ABI
+stays at version 2. `scarletbook-pcm` is outside the freeze and is being deprecated in favour of
+[dsd2pcm-rs](#dsd2pcm-rs) ([#398](https://github.com/aclater/scarletbook-rs/issues/398)).
+
+- **1.0.1** (2026-11-23): the same code as 1.0.0, released again so that the C interface crate
+  `scarletbook-ffi` 1.x reaches crates.io; 1.0.0's publishing stopped partway, so
+  `scarletbook-ffi` has no 1.0.0 ([#402](https://github.com/aclater/scarletbook-rs/issues/402)).
+- **1.0.0** (2026-11-23): the 0.7 interface, frozen; no code change from 0.7.0, and timings within
+  half a percent of it.
+
+Releases: [1.0.0](https://github.com/aclater/scarletbook-rs/releases/tag/v1.0.0) (2026-11-23),
+[1.0.1](https://github.com/aclater/scarletbook-rs/releases/tag/v1.0.1) (2026-11-23).
+
+### 0.7 line
+
+**0.7.0** (2026-11-23): removes the 36 items deprecated in 0.6.0 (a breaking change, with a
+migration page). Gapless DSF chain boundaries move by one 4096-byte block, following a
+specification amendment ([#359](https://github.com/aclater/scarletbook-rs/issues/359)). Decoded
+output and the C ABI are unchanged.
+
+Releases: [0.7.0](https://github.com/aclater/scarletbook-rs/releases/tag/v0.7.0) (2026-11-23).
+
+### 0.6 line
+
+The interface release before 1.0, and a hardened release workflow.
+
+- **0.6.2** (2026-11-22): single-frame 5- and 6-channel DST decoding back to 0.5.x speed
+  ([#378](https://github.com/aclater/scarletbook-rs/issues/378)); DSD-to-PCM faster on 32-bit x86.
+  Output identical; no API or ABI change.
+- **0.6.1** (2026-11-17): faster DST decoding on 32-bit x86, output identical; no API or ABI change.
+- **0.6.0** (2026-11-16): breaking interface changes before 1.0 (non-exhaustive types, renames,
+  36 old names deprecated, with a migration guide); DST decoding 5 to 10 % faster; fixes to seek
+  verdicts and ID3 tag size. The first release from the hardened release workflow: a tag must be
+  on `main` and have passed its required checks, and the jobs that sign and publish build nothing.
+
+Releases: [0.6.0](https://github.com/aclater/scarletbook-rs/releases/tag/v0.6.0) (2026-11-16),
+[0.6.1](https://github.com/aclater/scarletbook-rs/releases/tag/v0.6.1) (2026-11-17),
+[0.6.2](https://github.com/aclater/scarletbook-rs/releases/tag/v0.6.2) (2026-11-22).
 
 ### 0.5 line
 
 Output API, cancellation, seek hints and faster decoding.
 
+- 0.5.9: a DST lane setting for track cursors; DST decoding faster (5-channel 8.5 % on one thread,
+  14.4 % on all threads); DSD-to-PCM about 8 % faster, byte-identical.
 - 0.5.8: seek index loader refuses a form the library never writes; `bench realtime`; corrected benchmark runner; `scarletbook-ffi` on crates.io. Reports no speed change.
 
 - 0.5.0 to 0.5.1: remaining TOC fields through the C interface, cancellable and observable
@@ -533,7 +618,10 @@ Releases: [0.5.0](https://github.com/aclater/scarletbook-rs/releases/tag/v0.5.0)
 [0.5.3](https://github.com/aclater/scarletbook-rs/releases/tag/v0.5.3) (2026-11-01),
 [0.5.4](https://github.com/aclater/scarletbook-rs/releases/tag/v0.5.4) (2026-11-01),
 [0.5.5](https://github.com/aclater/scarletbook-rs/releases/tag/v0.5.5) (2026-11-01),
-[0.5.6](https://github.com/aclater/scarletbook-rs/releases/tag/v0.5.6) (2026-11-02).
+[0.5.6](https://github.com/aclater/scarletbook-rs/releases/tag/v0.5.6) (2026-11-02),
+[0.5.7](https://github.com/aclater/scarletbook-rs/releases/tag/v0.5.7) (2026-11-02),
+[0.5.8](https://github.com/aclater/scarletbook-rs/releases/tag/v0.5.8) (2026-11-05),
+[0.5.9](https://github.com/aclater/scarletbook-rs/releases/tag/v0.5.9) (2026-11-06).
 
 ### 0.4 line
 
@@ -564,3 +652,19 @@ provenance.
 
 Releases: [0.1.0](https://github.com/aclater/scarletbook-rs/releases/tag/v0.1.0) (2026-10-30),
 [0.2.0](https://github.com/aclater/scarletbook-rs/releases/tag/v0.2.0) (2026-10-30).
+
+## dsd2pcm-rs
+
+### 0.1 line
+
+First releases: DSD (DSF and DSDIFF files, or SACD frames) to 24-bit PCM as a Rust crate
+(`dsd2pcm`), a command-line tool (`dsd2pcm-cli`) and a C library (ABI version 1), with the same
+output on every CPU. Builds for Linux x86_64, aarch64 and 32-bit x86, macOS on Apple silicon
+and Windows x86_64.
+
+- **0.1.1** (2026-11-23): the macOS tool and C library are signed with a Developer ID and
+  notarised by Apple; faster one-frame calls; an SSE2 level for 32-bit x86.
+- **0.1.0** (2026-11-23): first release; reproduces scarletbook-pcm 0.7.0's output byte for byte.
+
+Releases: [0.1.0](https://github.com/aclater/dsd2pcm-rs/releases/tag/v0.1.0) (2026-11-23),
+[0.1.1](https://github.com/aclater/dsd2pcm-rs/releases/tag/v0.1.1) (2026-11-23).

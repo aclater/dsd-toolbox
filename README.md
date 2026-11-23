@@ -46,8 +46,8 @@ Which project do you need?
 - [Clean room](docs/clean-room.md): how sacd-spec and scarletbook-rs are kept independent
 - [Decisions](DECISIONS.md): the major decisions and why they were made
 - [Releases](RELEASES.md): what each minor version line brought, per project
-- [Quality](QUALITY.md): the checks against bugs, regressions, leaks and supply-chain problems,
-  and the known gaps
+- [Quality](QUALITY.md): how each project is tested and how its releases can be checked
+- [CI/CD](docs/ci-cd.md): how changes are reviewed and releases are built, signed and published
 - [Security](SECURITY.md): how to report a vulnerability in any of the projects (privately,
   never in a public issue)
 - [Contributing](CONTRIBUTING.md)

@@ -2,7 +2,8 @@
 
 This repository holds no code. A vulnerability belongs to the project it is in, and each
 project has its own policy with its scope and what a report should contain. This page says
-where to report, what all five projects promise, and how a vulnerability is handled.
+where to report, what all the projects promise, how a vulnerability is handled, and how a
+release can be checked.
 
 ## Where to report
 
@@ -15,6 +16,7 @@ Please don't open a public issue, pull request or discussion for a vulnerability
 | pysacd | [new advisory](https://github.com/aclater/pysacd/security/advisories/new) | [SECURITY.md](https://github.com/aclater/pysacd/blob/master/SECURITY.md), [threat model](https://github.com/aclater/pysacd/blob/master/docs/security.md) |
 | beets-pysacd | [new advisory](https://github.com/aclater/beets-pysacd/security/advisories/new) | [SECURITY.md](https://github.com/aclater/beets-pysacd/blob/main/SECURITY.md) |
 | scarletbook-rs | [new advisory](https://github.com/aclater/scarletbook-rs/security/advisories/new) | [SECURITY.md](https://github.com/aclater/scarletbook-rs/blob/main/SECURITY.md) |
+| dsd2pcm-rs | [new advisory in this repository](https://github.com/aclater/dsd-toolbox/security/advisories/new) | this page |
 | sacd-spec | [new advisory](https://github.com/aclater/sacd-spec/security/advisories/new) | [SECURITY.md](https://github.com/aclater/sacd-spec/blob/main/SECURITY.md) |
 
 If you don't know which project it is in, report it to the tool you were running; it will be
@@ -71,10 +73,16 @@ found by a contributor, an agent or an internal review.
 5. **Publish the advisory** once the release is out, with a CVE if it warrants one and credit
    to the reporter. Follow-up hardening can then be discussed in public.
 
-**Across the clean-room wall.** The rule in [README.md](README.md#the-clean-room-wall) holds
-for vulnerabilities too. Someone who has read pysacd's or sacdfs's code and finds that the
-cause is in scarletbook doesn't open anything against scarletbook-rs. They say so in the
-advisory of the project they were working on, and the maintainer takes it to scarletbook-rs as
-a private statement of the behaviour and the input, with no code. The dependent project moves
-to scarletbook's fixed release once it is out. Outside reporters can report to scarletbook-rs
-directly.
+**Across the clean-room wall.** The rule in [docs/clean-room.md](docs/clean-room.md) holds
+for vulnerabilities too. Someone who has read the code of a project outside the clean room and
+finds that the cause is in scarletbook-rs doesn't open anything against scarletbook-rs. They say
+so in the advisory of the project they were working on, and the maintainer takes it to
+scarletbook-rs as a private statement of the behaviour and the input, with no code. The
+dependent project moves to scarletbook-rs's fixed release once it is out. Outside reporters can
+report to scarletbook-rs directly.
+
+## Review and release integrity
+
+How changes are reviewed and releases are built, signed and published is described in
+[docs/ci-cd.md](docs/ci-cd.md), and what each project checks in [QUALITY.md](QUALITY.md). To
+check a download, see [Verifying a release](docs/ci-cd.md#verifying-a-release).
