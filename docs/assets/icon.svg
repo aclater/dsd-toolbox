@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>DSD Toolbox</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1f3a5f"/>
+      <stop offset="1" stop-color="#0f1f36"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f5b63d"/>
+      <stop offset="1" stop-color="#e0902a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <g transform="translate(256 256) scale(1.3) translate(-256 -216)">
+  <!-- the shared DSD Toolbox disc -->
+  <circle cx="256" cy="216" r="132" fill="#e8eef5"/>
+  <circle cx="256" cy="216" r="104" fill="none" stroke="#9fb3c8" stroke-width="6"/>
+  <circle cx="256" cy="216" r="78" fill="none" stroke="#9fb3c8" stroke-width="6"/>
+  <circle cx="256" cy="216" r="52" fill="#c7d3e0"/>
+  <circle cx="256" cy="216" r="20" fill="#14283f"/>
+  <path d="M256 84a132 132 0 0 1 93 38l-93 94z" fill="#ffffff" opacity="0.55"/>
+  </g>
+</svg>
