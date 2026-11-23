@@ -15,7 +15,7 @@ its GitHub releases and its milestones; for any detail, they win. Newest first. 
 | [beets-pysacd](#beets-pysacd) | 0.2.2 (2026-11-15) | nothing recorded |
 | [scarletbook-rs](#scarletbook-rs) | 0.5.8 (2026-11-05) | 0.6.0, then 1.0.0 |
 
-To keep this page current, each project's release checklist includes "update aclater/sacd
+To keep this page current, each project's release checklist includes "update aclater/dsd-toolbox
 RELEASES.md".
 
 ## sacdfs

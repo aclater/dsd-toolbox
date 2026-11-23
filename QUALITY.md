@@ -11,7 +11,7 @@ repository says; nothing here is input to it.
 
 **Legend:** ✓ links to the source; – means the project has no such check (often because it does
 not apply, such as a sanitizer for a pure-Python project). The overview repository itself
-(aclater/sacd) holds documents only and has no CI.
+(aclater/dsd-toolbox) holds documents only and has no CI.
 
 Short names for the repositories, used in the tables: **sacdfs**
 ([aclater/sacdfs](https://github.com/aclater/sacdfs)), **pysacd**
@@ -259,10 +259,10 @@ with no bypass actors:
 
 | Rule | sacdfs | pysacd | beets | scarletbook | spec | sacd |
 |---|---|---|---|---|---|---|
-| Default branch: changes only by pull request, no force-push, no deletion | [✓](https://github.com/aclater/sacdfs/rules) | [✓](https://github.com/aclater/pysacd/rules) | [✓](https://github.com/aclater/beets-pysacd/rules) | [✓](https://github.com/aclater/scarletbook-rs/rules) | [✓](https://github.com/aclater/sacd-spec/rules) | [✓](https://github.com/aclater/sacd/rules) |
+| Default branch: changes only by pull request, no force-push, no deletion | [✓](https://github.com/aclater/sacdfs/rules) | [✓](https://github.com/aclater/pysacd/rules) | [✓](https://github.com/aclater/beets-pysacd/rules) | [✓](https://github.com/aclater/scarletbook-rs/rules) | [✓](https://github.com/aclater/sacd-spec/rules) | [✓](https://github.com/aclater/dsd-toolbox/rules) |
 | Required status checks | [✓](https://github.com/aclater/sacdfs/rules) 11 | [✓](https://github.com/aclater/pysacd/rules) 15 | [✓](https://github.com/aclater/beets-pysacd/rules) 13 | [✓](https://github.com/aclater/scarletbook-rs/rules) 7 | – | – |
 | Branch must be up to date with the default branch before merging | [✓](https://github.com/aclater/sacdfs/rules) | [✓](https://github.com/aclater/pysacd/rules) | [✓](https://github.com/aclater/beets-pysacd/rules) | [✓](https://github.com/aclater/scarletbook-rs/rules) | – | – |
-| `v*` tags immutable (no update, deletion or force-push) | [✓](https://github.com/aclater/sacdfs/rules) | [✓](https://github.com/aclater/pysacd/rules) | [✓](https://github.com/aclater/beets-pysacd/rules) | [✓](https://github.com/aclater/scarletbook-rs/rules) | [✓](https://github.com/aclater/sacd-spec/rules) | [✓](https://github.com/aclater/sacd/rules) |
+| `v*` tags immutable (no update, deletion or force-push) | [✓](https://github.com/aclater/sacdfs/rules) | [✓](https://github.com/aclater/pysacd/rules) | [✓](https://github.com/aclater/beets-pysacd/rules) | [✓](https://github.com/aclater/scarletbook-rs/rules) | [✓](https://github.com/aclater/sacd-spec/rules) | [✓](https://github.com/aclater/dsd-toolbox/rules) |
 
 - **The required checks** are, in sacdfs: fmt + clippy, tests, MSRV, cargo-deny, dependency
   review, CodeQL (Rust, Actions), coverage, the container share test on x86-64 and arm64, and the
@@ -279,7 +279,7 @@ with no bypass actors:
   always describe the code it merges into. A pull request that was green against an older default
   branch once broke sacdfs. sacd-spec and this repository have no check that runs on every pull
   request, so the rule has nothing to attach to there
-  ([#37](https://github.com/aclater/sacd/issues/37)).
+  ([#37](https://github.com/aclater/dsd-toolbox/issues/37)).
 - **Immutable tags** mean a release that went wrong is followed by a new version, never moved
   ([sacdfs CONTRIBUTING.md, "Releasing"](https://github.com/aclater/sacdfs/blob/main/CONTRIBUTING.md#releasing)).
 - **sacd-spec** has no CI tests to require; its pull requests are merged by the owner after a

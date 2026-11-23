@@ -19,7 +19,7 @@ Please don't open a public issue, pull request or discussion for a vulnerability
 
 If you don't know which project it is in, report it to the tool you were running; it will be
 moved if it belongs elsewhere. Private reporting is also on for
-[this repository](https://github.com/aclater/sacd/security/advisories/new), for a problem that
+[this repository](https://github.com/aclater/dsd-toolbox/security/advisories/new), for a problem that
 spans projects.
 
 If you aren't sure whether a problem is a security problem, report it privately anyway: a
