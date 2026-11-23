@@ -14,12 +14,12 @@ many times faster than real time on any recent desktop CPU.
 
 | Project | What |
 |---|---|
-| [sacdfs](https://github.com/aclater/sacdfs) | Shows a folder of SACD images as DSF and WAV tracks to any player, without extracting them. Runs on Linux, including NAS systems; Windows 10 and 11, x64 (a read-only drive letter, with WinFsp); macOS 11 or later (Apple Silicon and Intel). Any other system can play the discs over SMB or NFS from a NAS or Linux computer that runs sacdfs |
-| [pysacd](https://github.com/aclater/pysacd) | Python toolkit and `sacd_extract`-compatible extractor (DSF, DSDIFF, FLAC, WAV) with a C engine. Python 3.10 or later; wheels for Linux x86_64 and aarch64 (glibc 2.28 or later; musl on x86_64), macOS (Intel 10.13 or later, Apple Silicon 11 or later) and Windows x64 ([PyPI](https://pypi.org/project/pysacd/)) |
-| [beets-pysacd](https://github.com/aclater/beets-pysacd) | beets plugin: imports SACD images into a music library, MusicBrainz matching, DVD and Blu-ray audio cataloguing ([PyPI](https://pypi.org/project/beets-pysacd/)) |
-| [scarletbook-rs](https://github.com/aclater/scarletbook-rs) | Rust library: TOC, audio, DST decoding, C ABI |
-| [dsd2pcm-rs](https://github.com/aclater/dsd2pcm-rs) | DSD to PCM conversion and DSF, DFF and WAV reading and writing, as a Rust crate, a C library and a command-line tool |
-| [sacd-spec](https://github.com/aclater/sacd-spec) | Implementation-free specification of SACD disc images, a synthetic conformance corpus, and the benchmark method and results |
+| [sacdfs](https://github.com/aclater/sacdfs) | Plays SACD images as DSF and WAV tracks in any player, without extracting them (Linux, NAS, Windows, macOS) |
+| [pysacd](https://github.com/aclater/pysacd) | Extracts and converts SACD images to DSF, DSDIFF, FLAC or WAV, from the command line or Python |
+| [beets-pysacd](https://github.com/aclater/beets-pysacd) | Imports SACD images into a beets music library, with MusicBrainz matching |
+| [scarletbook-rs](https://github.com/aclater/scarletbook-rs) | Rust and C library that reads SACD images and decodes DST |
+| [dsd2pcm-rs](https://github.com/aclater/dsd2pcm-rs) | Rust and C library and CLI: DSD to PCM, and DSF, DFF and WAV files |
+| [sacd-spec](https://github.com/aclater/sacd-spec) | Specification of the SACD disc format, with a test corpus |
 
 
 ## Quick start
