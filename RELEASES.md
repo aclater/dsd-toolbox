@@ -11,7 +11,7 @@ its GitHub releases and its milestones; for any detail, they win. Newest first. 
 | Project | Latest release | In progress |
 |---|---|---|
 | [sacdfs](#sacdfs) | 0.6.5 (2026-11-16) | 0.7.0 |
-| [pysacd](#pysacd) | 0.5.3 (2026-11-21) | nothing recorded |
+| [pysacd](#pysacd) | 0.5.4 (2026-11-23) | nothing recorded |
 | [beets-pysacd](#beets-pysacd) | 0.2.2 (2026-11-15) | nothing recorded |
 | [scarletbook-rs](#scarletbook-rs) | 0.5.8 (2026-11-05) | 0.6.0, then 1.0.0 |
 
@@ -324,6 +324,9 @@ Releases: [0.1.0](https://github.com/aclater/sacdfs/releases/tag/v0.1.0) (2026-1
 ### 0.5 line
 
 Trust in what shipped: the comparison with `sacd_extract` works in CI again.
+
+- **0.5.4** ([notes](https://github.com/aclater/pysacd/releases/tag/v0.5.4)): the engine links
+  scarletbook-rs 0.6.2, with the same output and speed ([#191](https://github.com/aclater/pysacd/issues/191)).
 
 - **0.5.3** ([notes](https://github.com/aclater/pysacd/releases/tag/v0.5.3)): two
   `pysacd-extract -z` cases are now byte-identical to `sacd_extract` ([#182](https://github.com/aclater/pysacd/issues/182),
