@@ -42,6 +42,7 @@ measurement floor next to every result, so a good device is not hidden by the to
    attestation. This example is dsd2pcm-rs 0.1.1; `--deny-self-hosted-runners` rejects anything
    not built on a GitHub-hosted runner.
 
+   <!-- docs-run: skip="gh needs a signed-in GitHub token, which docs-run never passes to a container" -->
    ```sh
    gh release download v0.1.1 -R dsd-toolbox/dsd2pcm-rs -p 'dsd2pcm-0.1.1-x86_64-linux.tar.gz*'
    sha256sum -c dsd2pcm-0.1.1-x86_64-linux.tar.gz.sha256
@@ -53,9 +54,13 @@ measurement floor next to every result, so a good device is not hidden by the to
 2. **Reproduce the measurements.** dsd-measure's Quick start measures its reference decoder and
    modulator and writes a report with its own floor shown:
 
+   <!-- docs-run: packages=sudo,gcc,git,python3-pip,pipx expect="^Finished in" expect="dsd-measure {version}" -->
    ```sh
    sudo dnf install -y gcc git python3-pip pipx
-   pipx install git+https://github.com/dsd-toolbox/dsd-measure
+   # facts:install kind=pipx-git repo=dsd-toolbox/dsd-measure
+   pipx install git+https://github.com/dsd-toolbox/dsd-measure@v0.1.1
+   # /facts
+   dsd-measure --version
    dsd-measure init
    dsd-measure run suite.toml
    ```
@@ -63,6 +68,7 @@ measurement floor next to every result, so a good device is not hidden by the to
 3. **Run a project's tests.** For example dsd2pcm-rs, which checks its output against its
    reference filters at every SIMD level:
 
+   <!-- docs-run: skip="builds and tests a whole project; that project's own CI runs it" -->
    ```sh
    git clone https://github.com/dsd-toolbox/dsd2pcm-rs
    cd dsd2pcm-rs

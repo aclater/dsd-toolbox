@@ -55,6 +55,15 @@ each project tests is in [QUALITY.md](../QUALITY.md); each project's own documen
 - sacdfs and dsd2pcm-rs pin the Rust toolchain CI uses; pysacd runs its tests in a container
   pinned by digest.
 
+## Docs checks
+
+Two shared tools keep documentation true, built into reusable workflows that a project calls pinned
+to a commit SHA: `docs-facts` generates and checks the facts that change with each release (latest
+version and date, release assets and platforms, CI matrices, minimum versions, install lines), and
+`docs-run` runs the documented commands in a fresh container against the published release and
+reports how many command blocks it covers. See [tools/docs](../tools/docs/README.md) for the
+markers and the workflow lines.
+
 ## Per project
 
 | | sacdfs | pysacd | beets‑pysacd | scarletbook‑rs | dsd2pcm‑rs | sacd‑spec |
@@ -75,6 +84,7 @@ sacd-spec holds no code and has no releases; implementations cite the commit the
 Download the file and its `.sha256`, check the checksum, then check the attestation, naming the
 project's release workflow and the tag:
 
+<!-- docs-run: skip="gh needs a signed-in GitHub token, which docs-run never passes to a container" -->
 ```sh
 gh release download v0.1.1 -R dsd-toolbox/dsd2pcm-rs -p 'dsd2pcm-0.1.1-x86_64-linux.tar.gz*'
 sha256sum -c dsd2pcm-0.1.1-x86_64-linux.tar.gz.sha256

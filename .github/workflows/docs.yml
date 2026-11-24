@@ -1,6 +1,8 @@
-# The docs checks on this repository: the reusable workflows run against the working tree.
-# Pull requests and pushes check shape and links offline; the weekly run also fetches every
-# external URL.
+# The docs checks on this repository: the tool tests, the reusable workflows run against the working
+# tree, the generated facts regions (RELEASES.md and the Projects table) and the documented commands.
+# Pull requests and pushes check shape and links offline; the weekly run also fetches every external
+# URL, regenerates the facts and opens one docs pull request when a project has released. Other
+# repositories call the reusable docs-*.yml workflows instead (see tools/docs/README.md).
 
 name: docs
 
@@ -9,7 +11,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: "17 6 * * 1"  # weekly: external links rot without a change
+    - cron: "17 6 * * 1"  # weekly: external links rot and projects release without a change here
   workflow_dispatch:
 
 concurrency:
@@ -27,7 +29,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
-      - run: python3 -I tools/docs/tests/test_docs_tools.py
+      - run: python3 -I -m unittest discover -s tools/docs/tests -t tools/docs
 
   lint:
     uses: ./.github/workflows/docs-lint.yml
@@ -40,3 +42,44 @@ jobs:
   touched:
     if: github.event_name == 'pull_request'
     uses: ./.github/workflows/docs-touched.yml
+
+  facts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # the weekly run pushes docs/facts-update
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: ${{ github.event_name == 'schedule' }}
+      - name: Check the regions
+        if: github.event_name != 'schedule'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -I tools/docs/docs_facts.py check
+      - name: Refresh the regions and open a pull request
+        if: github.event_name == 'schedule'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          python3 -I tools/docs/docs_facts.py generate
+          sh tools/docs/open-facts-pr.sh
+
+  commands:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run the documented commands
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          rc=0
+          python3 -I tools/docs/docs_run.py run --version-of dsd-toolbox/dsd-measure --json "$RUNNER_TEMP/docs-run.json" | tee "$RUNNER_TEMP/docs-run.txt" || rc=$?
+          { echo '```'; cat "$RUNNER_TEMP/docs-run.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
