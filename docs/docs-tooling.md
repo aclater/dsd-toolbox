@@ -20,9 +20,9 @@ Add one job per tool to the project's workflow, with the commit of this reposito
 ```yaml
 jobs:
   docs-lint:
-    uses: dsd-toolbox/dsd-toolbox/.github/workflows/docs-lint.yml@ff8c7230120e55a4126cc7b3c42697ff6eadfe56
+    uses: dsd-toolbox/dsd-toolbox/.github/workflows/docs-lint.yml@677b0384600338c241ce9415ea5d45914fae233c
     with:
-      tools_ref: ff8c7230120e55a4126cc7b3c42697ff6eadfe56
+      tools_ref: 677b0384600338c241ce9415ea5d45914fae233c
 ```
 
 Use the same shape for `docs-links.yml` (pull requests offline, weekly with `external: true`), `docs-touched.yml` (pull requests only) and `docs-audit.yml` (after each release and monthly). Then add a `.docs.toml` at the repository root:
