@@ -1,0 +1,49 @@
+# The monthly docs sweep: the docs audit (lint, links with external URLs, facts) on this
+# repository and on every toolbox project's default branch. It opens nothing public. A failing
+# run is the signal that the docs of some project drifted; the dated result is the artifact.
+
+name: docs-monthly
+
+on:
+  schedule:
+    - cron: "43 5 3 * *"  # the 3rd of every month
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  self:
+    uses: ./.github/workflows/docs-audit.yml
+
+  projects:
+    name: audit ${{ matrix.repo }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        repo: [sacdfs, pysacd, beets-pysacd, dsd2pcm-rs, dsd-measure]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          path: toolbox
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: dsd-toolbox/${{ matrix.repo }}
+          path: project
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Audit
+        env:
+          REPO: ${{ matrix.repo }}
+        run: python3 -I toolbox/tools/docs/docs_audit.py project --name "$REPO" --check --out "audit"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        if: ${{ !cancelled() }}
+        with:
+          name: docs-audit-${{ matrix.repo }}
+          path: audit
+          retention-days: 90

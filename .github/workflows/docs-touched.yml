@@ -1,0 +1,68 @@
+# Reusable: docs-touched (T5). A pull request that changes code, options, configuration or
+# behaviour files must change the README, docs/ or CHANGELOG, or say in its body:
+#   Docs: none needed — <reason>
+# On a batch branch (head branch batch/...) every first-parent commit is checked on its own, so
+# one docs change in the batch does not cover the others.
+#
+# Adopt it (pull_request trigger only):
+#
+#   docs-touched:
+#     uses: dsd-toolbox/dsd-toolbox/.github/workflows/docs-touched.yml@SHA
+#     with:
+#       tools_ref: SHA
+#
+# The path lists are in .docs.toml ([touched]).
+
+name: docs-touched
+
+on:
+  workflow_call:
+    inputs:
+      tools_ref:
+        description: "Commit of dsd-toolbox/dsd-toolbox whose tools/docs to run; empty uses the calling repository's own copy"
+        type: string
+        default: ""
+      name:
+        description: "Repository name when .docs.toml does not give one"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  touched:
+    name: docs touched
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Fetch the docs tools
+        if: inputs.tools_ref != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: dsd-toolbox/dsd-toolbox
+          ref: ${{ inputs.tools_ref }}
+          path: .docs-tools
+          persist-credentials: false
+
+      - name: The pull request as a whole
+        env:
+          TOOLS: ${{ inputs.tools_ref != '' && '.docs-tools/tools/docs' || 'tools/docs' }}
+          NAME: ${{ inputs.name }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: python3 -I "$TOOLS/docs_touched.py" . ${NAME:+--name "$NAME"} --base "$BASE" --head "$HEAD"
+
+      - name: Each commit of a batch
+        if: startsWith(github.head_ref, 'batch/')
+        env:
+          TOOLS: ${{ inputs.tools_ref != '' && '.docs-tools/tools/docs' || 'tools/docs' }}
+          NAME: ${{ inputs.name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: python3 -I "$TOOLS/docs_touched.py" . ${NAME:+--name "$NAME"} --range "$BASE..$HEAD" --each

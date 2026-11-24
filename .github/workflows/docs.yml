@@ -1,0 +1,42 @@
+# The docs checks on this repository: the reusable workflows run against the working tree.
+# Pull requests and pushes check shape and links offline; the weekly run also fetches every
+# external URL.
+
+name: docs
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1"  # weekly: external links rot without a change
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}  # a new push supersedes the old PR run; main runs finish
+
+permissions:
+  contents: read
+
+jobs:
+  tools-test:
+    name: docs tools tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 -I tools/docs/tests/test_docs_tools.py
+
+  lint:
+    uses: ./.github/workflows/docs-lint.yml
+
+  links:
+    uses: ./.github/workflows/docs-links.yml
+    with:
+      external: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+
+  touched:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/docs-touched.yml
