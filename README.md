@@ -2,6 +2,8 @@
 
 # DSD Toolbox
 
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/dsd-toolbox/dsd-toolbox/badge)](https://scorecard.dev/viewer/?uri=github.com/dsd-toolbox/dsd-toolbox)
+
 > scarletbook-rs contributors: please don't read this repository ([why](docs/clean-room.md#for-scarletbook-rs-contributors)).
 
 Open tools for reading Super Audio CD disc images and DSD audio: a specification written from
@@ -39,6 +41,10 @@ Which project do you need?
   [beets-pysacd](https://github.com/dsd-toolbox/beets-pysacd#quick-start). pysacd needs Python 3.10
   or later and has wheels for Linux (x86_64 and aarch64), macOS (Intel and Apple Silicon) and
   Windows x64.
+- **Measure a DSD-to-PCM converter's accuracy**, with readings like those published by
+  Archimago, ASR and Stereophile:
+  [dsd-measure](https://github.com/dsd-toolbox/dsd-measure#quick-start). It needs Python 3.11 or
+  later and installs from GitHub with pipx.
 - **Build your own software**: the Rust library [scarletbook-rs](https://github.com/aclater/scarletbook-rs)
   for SACD images, [dsd2pcm-rs](https://github.com/aclater/dsd2pcm-rs#quick-start) for DSD to PCM
   and DSF/DFF/WAV files, or [sacd-spec](https://github.com/aclater/sacd-spec#quick-start) to
