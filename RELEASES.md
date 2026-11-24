@@ -16,7 +16,7 @@ GitHub releases; the newest is dated <!-- facts:latest-date repos=dsd-toolbox/sa
 | [beets-pysacd](#beets-pysacd) | <!-- facts:release repo=dsd-toolbox/beets-pysacd fmt="{version} ({date})" -->0.2.2 (2026-11-15)<!-- /facts --> | nothing recorded |
 | [scarletbook-rs](#scarletbook-rs) | <!-- facts:release repo=aclater/scarletbook-rs fmt="{version} ({date})" -->1.0.2 (2026-11-23)<!-- /facts --> | nothing recorded |
 | [dsd2pcm-rs](#dsd2pcm-rs) | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="{version} ({date})" -->0.1.2 (2026-11-24)<!-- /facts --> | 0.2.0 |
-| [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.1 (2026-11-24)<!-- /facts --> | 0.1.2 |
+| [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.2 (2026-11-24)<!-- /facts --> | 0.1.3 |
 
 To keep this page current, each project's release checklist includes "update dsd-toolbox/dsd-toolbox
 RELEASES.md".
