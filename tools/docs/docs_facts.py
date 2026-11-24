@@ -32,8 +32,24 @@ import shlex
 import sys
 import tomllib
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
+
+
+class _DropAuthOnRedirect(urllib.request.HTTPRedirectHandler):
+    """Never send the Authorization header to another host than the one it was meant for."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        new = super().redirect_request(req, fp, code, msg, headers, newurl)
+        if new is not None and urllib.parse.urlsplit(newurl).netloc != urllib.parse.urlsplit(req.full_url).netloc:
+            for h in ("Authorization", "authorization"):
+                new.headers.pop(h, None)
+                new.unredirected_hdrs.pop(h, None)
+        return new
+
+
+_OPENER = urllib.request.build_opener(_DropAuthOnRedirect)
 
 HTML_RE = re.compile(r"<!-- facts:([a-z][a-z0-9-]*)((?:\s[^>]*?)?) -->(.*?)<!-- /facts -->", re.S)
 SHELL_RE = re.compile(
@@ -75,7 +91,7 @@ class Source:
             if self.token and url.startswith("https://api.github.com/"):
                 req.add_header("Authorization", f"Bearer {self.token}")
             try:
-                with urllib.request.urlopen(req, timeout=30) as r:
+                with _OPENER.open(req, timeout=30) as r:
                     data = json.load(r)
             except urllib.error.HTTPError as e:
                 if e.code == 404:
@@ -155,10 +171,10 @@ def need(a: dict, key: str) -> str:
 def parse_args(text: str) -> dict:
     out = {}
     try:
-        tokens = shlex.split(text.strip())
+        parts = shlex.split(text.strip())
     except ValueError as e:
         raise FactError(f"cannot parse arguments {text.strip()!r}: {e}") from e
-    for t in tokens:
+    for t in parts:
         if "=" not in t:
             raise FactError(f"argument {t!r} is not key=value")
         k, v = t.split("=", 1)

@@ -1,13 +1,13 @@
-# Reusable: keep the marked facts regions in Markdown (release versions and dates, asset and
-# platform lists, CI matrices, minimum versions, install lines) equal to their sources.
+# Reusable: check that the marked facts regions in Markdown (release versions and dates, asset and
+# platform lists, CI matrices, minimum versions, install lines) equal their sources. Read-only:
+# callers need only `permissions: contents: read`. Refreshing the regions is the separate
+# docs-facts-generate.yml (write access, schedule or dispatch only).
 #
 #   uses: dsd-toolbox/dsd-toolbox/.github/workflows/docs-facts.yml@<full commit SHA>
 #   with:
 #     tools-ref: <the same full commit SHA>
-#     mode: check          # or generate: rewrites the regions and opens one docs PR
 #
-# `check` fails when a region is stale. `generate` is for a schedule or an after-release job:
-# it opens (or updates) the branch docs/facts-update with a pull request for review.
+# Fails when a region is stale.
 name: docs-facts
 
 on:
@@ -17,26 +17,18 @@ on:
         description: Commit SHA of dsd-toolbox/dsd-toolbox that holds tools/docs (use the SHA you pinned this workflow at)
         required: true
         type: string
-      mode:
-        description: check or generate
-        required: false
-        default: check
-        type: string
 
 permissions:
   contents: read
 
 jobs:
   facts:
-    name: docs-facts ${{ inputs.mode }}
+    name: docs-facts check
     runs-on: ubuntu-latest
-    permissions:
-      contents: write        # generate pushes the docs/facts-update branch
-      pull-requests: write   # and opens its pull request
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          persist-credentials: ${{ inputs.mode == 'generate' }}
+          persist-credentials: false
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
@@ -46,17 +38,6 @@ jobs:
           persist-credentials: false
 
       - name: Check the regions
-        if: inputs.mode == 'check'
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: python3 -I .docs-tools/tools/docs/docs_facts.py check
-
-      - name: Generate the regions and open a pull request
-        if: inputs.mode == 'generate'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-          GH_TOKEN: ${{ github.token }}
-          BASE: ${{ github.event.repository.default_branch }}
-        run: |
-          python3 -I .docs-tools/tools/docs/docs_facts.py generate
-          sh .docs-tools/tools/docs/open-facts-pr.sh

@@ -71,7 +71,7 @@ SMALL = {"a", "an", "the", "of", "on", "in", "to", "and", "or", "for", "with", "
          "vs", "via", "per", "you", "your", "it", "its", "not", "no", "do", "does", "are", "be", "that", "this",
          "when", "how", "what", "why", "which", "if", "can", "my", "our", "into", "over", "up", "off", "out"}
 PROPER = set("""Linux Windows Python Rust Docker Podman Fedora Debian Ubuntu RHEL Red Hat Synology QNAP ASUSTOR TerraMaster
-UGREEN Plex Roon Jellyfin Kodi Sonos Volumio Apple Silicon Intel Homebrew Flatpak Snap Nix Arch Alpine GitHub Forgejo
+UGREEN Plex Roon Jellyfin Kodi Sonos Volumio Apple Silicon Intel Homebrew Flatpak Snap Nix Arch Alpine GitHub
 MusicBrainz Discogs Beets Mac Archimago Stereophile FFmpeg VLC Android Gatekeeper Xcode Cargo Clippy Rustup Unix POSIX
 Wayland Copr Samba Raspberry Pi Armbian OpenWrt Ubiquiti Atom Zen Ryzen Core Xeon Apple Homebrew Chocolatey Scoop
 Winget PyPI Codecov CodeQL Scorecard OpenSSF Dependabot Fuse FUSE Keep Changelog Semantic Versioning Beets Harmony Python

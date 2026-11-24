@@ -50,7 +50,17 @@ Fenced command blocks in README.md and docs/ are run in a fresh container that h
 | `<!-- docs-run: skip="reason" -->` | does not run; the reason is required and shown in the report |
 | no marker | listed as "not run" and counted against coverage |
 
-Options: `image=` (default `registry.fedoraproject.org/fedora:43`), `packages=a,b` (dnf), `setup=` (a command instead), `expect=` (a regex the output must match; repeat for more; `{version}` is `--version`), `drop=` (a regex; matching lines are removed and listed, for a line that opens a browser), `group=` (blocks of any file with the same name share one container and one working folder, in README-first order; default one group per file), `timeout=`.
+Options: `image=` (the name of an allowed image, default `default`; see below), `packages=a,b` (dnf, plain package names), `setup=` (a command instead), `expect=` (a regex the output must match; repeat for more; `{version}` is `--version`), `drop=` (a regex; matching lines are removed and listed, for a line that opens a browser), `group=` (blocks of any file with the same name share one container and one working folder, in README-first order; default one group per file), `timeout=` (seconds, 1 to 7200, default 1800).
+
+A marker is text from a file that may not be yours, so every value is checked strictly (no control characters, no leading `-`, length limits, fixed character sets) and a bad marker exits 2. A marker never names an image reference, a volume, a privilege, a network or an environment variable. Images come only from the allowlist in `.docs.toml`, each a full reference pinned by digest. Without an entry the built-in `default` (Fedora 43, pinned by digest) is used:
+
+```toml
+[run.images.fedora]
+ref = "registry.fedoraproject.org/fedora@sha256:59be9ed15831f74e408c5f3d59fc77fc8371f4642de2673c16c37e880b4dd937"
+network = true      # only an entry that sets this gets a network (dnf, pip and pipx need one)
+```
+
+Every container runs with `--network=none` unless its image entry sets `network = true`, `--cap-drop=ALL` (a few capabilities are added back only when `packages=` or `setup=` installs software), `--security-opt=no-new-privileges`, a read-only root (not when installing), and memory, CPU and process limits and a timeout. The blocks themselves still run what the Markdown says, so run docs-run on text you trust or in CI on a disposable runner.
 
 <!-- docs-run: skip="runs the tool from a checkout of this repository" -->
 ```sh
@@ -70,7 +80,6 @@ jobs:
     uses: dsd-toolbox/dsd-toolbox/.github/workflows/docs-facts.yml@COMMIT-SHA
     with:
       tools-ref: COMMIT-SHA
-      mode: check
   commands:
     uses: dsd-toolbox/dsd-toolbox/.github/workflows/docs-run.yml@COMMIT-SHA
     with:
@@ -78,7 +87,7 @@ jobs:
       version: 0.1.1
 ```
 
-A weekly or after-release job with `mode: generate` opens the pull request `docs/facts-update` with the regenerated regions. This repository runs both tools on itself in `.github/workflows/docs.yml`; the tests are in `tools/docs/tests`.
+`docs-facts.yml` only checks and needs `contents: read`. To refresh the regions, call `docs-facts-generate.yml` from a schedule or `workflow_dispatch` job that grants `contents: write`, never from `pull_request`. It pushes the branch `docs/facts-update` and fails naming it; it does not open the pull request, because the organisation keeps "Actions can create pull requests" off (the setting also lets workflows approve pull requests). A person opens the pull request. This repository runs both tools on itself in `.github/workflows/docs.yml`; the tests are in `tools/docs/tests`.
 
 ## See also
 
