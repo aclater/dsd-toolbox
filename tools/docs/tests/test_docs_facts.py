@@ -1,3 +1,4 @@
+import datetime
 import io
 import json
 import sys
@@ -46,11 +47,11 @@ class T(unittest.TestCase):
         self.d = Path(tempfile.mkdtemp())
         self.src = F.Source(dict(REL))
 
-    def run_mode(self, mode, text, name="a.md"):
+    def run_mode(self, mode, text, name="a.md", today=datetime.date(2026, 12, 31)):
         p = self.d / name
         p.write_text(text)
         out = io.StringIO()
-        rc = F.run(mode, self.d, [name], self.src, out)
+        rc = F.run(mode, self.d, [name], self.src, out, today=today)
         return rc, p.read_text(), out.getvalue()
 
     def test_release_inline_canonical_owner(self):
@@ -69,6 +70,41 @@ class T(unittest.TestCase):
         _, once, _ = self.run_mode("generate", t)
         _, twice, _ = self.run_mode("generate", once)
         self.assertEqual(once, twice)
+
+    def test_stale_release_is_a_warning_for_seven_days_then_an_error(self):
+        # the newest release (REL: 2026-11-20) shipped; the committed text still names the previous one
+        for key_text in ["<!-- facts:release repo=old/proj -->0.0.1 (2026-01-01)<!-- /facts -->\n",
+                         "<!-- facts:latest-date repos=old/proj -->2026-01-01<!-- /facts -->\n",
+                         "# facts:install kind=pipx-git repo=old/proj\npipx install git+https://github.com/new/proj@v0.0.1\n# /facts\n"]:
+            t = key_text if key_text.startswith("<") else "```sh\n" + key_text + "```\n"
+            with self.subTest(region=key_text[:30]):
+                for day, rc, warn in [(datetime.date(2026, 11, 20), 0, True), (datetime.date(2026, 11, 27), 0, True),
+                                      (datetime.date(2026, 11, 28), 1, False)]:
+                    out = io.StringIO()
+                    (self.d / "w.md").write_text(t)
+                    err = io.StringIO()
+                    old, sys.stderr = sys.stderr, err
+                    try:
+                        got = F.run("check", self.d, ["w.md"], self.src, out, today=day)
+                    finally:
+                        sys.stderr = old
+                    self.assertEqual(got, rc, (day, out.getvalue()))
+                    self.assertEqual("WARNING" in err.getvalue(), warn, (day, err.getvalue()))
+
+    def test_other_stale_regions_and_pinned_tags_are_never_warnings(self):
+        (self.d / "Cargo.toml").write_text('[package]\nrust-version = "1.80"\n')
+        day = datetime.date(2026, 11, 21)
+        self.src.snapshot["https://api.github.com/repos/new/proj/releases/tags/v1.2.3"] = \
+            self.src.snapshot["https://api.github.com/repos/new/proj/releases/latest"]
+        for t in ["<!-- facts:msrv -->1.70<!-- /facts -->\n",
+                  "<!-- facts:release repo=old/proj tag=v1.2.3 -->0.0.1<!-- /facts -->\n"]:
+            with self.subTest(t=t):
+                self.assertEqual(self.run_mode("check", t, today=day)[0], 1)
+
+    def test_generate_clears_the_warning(self):
+        t = "<!-- facts:release repo=old/proj -->0.0.1 (2026-01-01)<!-- /facts -->\n"
+        _, new, _ = self.run_mode("generate", t, today=datetime.date(2026, 11, 21))
+        self.assertEqual(self.run_mode("check", new, today=datetime.date(2026, 11, 21))[0], 0)
 
     def test_empty_release_needs_opt_in(self):
         rc, _, _ = self.run_mode("check", "<!-- facts:release repo=none/spec -->x<!-- /facts -->\n")

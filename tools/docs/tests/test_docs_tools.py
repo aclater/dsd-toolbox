@@ -274,6 +274,23 @@ class LintTests(Base):
             with self.subTest(rule=rule, line=line):
                 self.assertIn(rule, lint(self.repo(with_line(line))))
 
+    def test_licenses_directory_does_not_crash(self):
+        # REUSE layout: LICENSES/ matches the LICENSE* glob but is a folder
+        d = {"LICENSES/CC-BY-4.0.txt": "Creative Commons Attribution 4.0\n"}
+        self.assertEqual(lint(self.repo(d)), [])
+        lint(self.repo({**d, "Cargo.toml": '[package]\nlicense = "Apache-2.0"\n'}))   # NOTICE missing: must not crash
+        # no LICENSE file: the folder is not one, and nothing crashes
+        self.assertIn("required-file", lint(self.repo({**d, "LICENSE": None})))
+
+    def test_slash_lists_are_not_dates(self):
+        for line in ["Formats: 16/24/32-bit PCM.", "Rates of 44.1/48 kHz and 88.2/96 kHz.", "Depths 8/16/24-bit.",
+                     "Rates 44.1/48/96 kHz.", "Plays 12/24/32 bit audio."]:
+            with self.subTest(line=line):
+                self.assertNotIn("date-format", lint(self.repo({"CONTRIBUTING.md": f"# Contributing\n\n{line}\n"})))
+        for line in ["Released on 02/11/2026.", "Released on 31/12/25.", "Released 12/31/2026."]:
+            with self.subTest(line=line):
+                self.assertIn("date-format", lint(self.repo({"CONTRIBUTING.md": f"# Contributing\n\n{line}\n"})))
+
     def test_cited_source_must_be_linked(self):
         rd = FILES["README.md"]
         self.assertIn("cited-source", lint(self.repo({"README.md": rd.replace("CC BY 4.0. Thanks", "CC BY 4.0. Measured like Archimago does. Thanks")})))

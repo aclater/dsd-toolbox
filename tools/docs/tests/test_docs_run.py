@@ -1,3 +1,5 @@
+import os
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -181,6 +183,139 @@ class Hostile(unittest.TestCase):
         same = h.redirect_request(req, None, 302, "Found", {}, "https://api.github.com/z")
         self.assertFalse(other.has_header("Authorization"))
         self.assertTrue(same.has_header("Authorization"))
+
+
+def git(d: Path, *args: str) -> str:
+    env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@example.org",
+           "GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@example.org", "GIT_CONFIG_GLOBAL": "/dev/null"}
+    return subprocess.run(["git", "-C", str(d), *args], env=env, check=True, capture_output=True, text=True).stdout
+
+
+class Checkout(unittest.TestCase):
+    """Checkout mode: the group starts in a COPY of `git archive HEAD`."""
+
+    DIGEST = "b" * 64
+
+    def setUp(self):
+        self.d = Path(tempfile.mkdtemp())
+        git(self.d, "init", "-q", "-b", "main")
+        (self.d / "data.txt").write_text("committed\n")
+        (self.d / "README.md").write_text(
+            "<!-- docs-run: checkout=1 -->\n```sh\n"
+            "test -f data.txt\ntest ! -e untracked.txt\ntest ! -e ignored.txt\ntest ! -e .git\n"
+            "echo built > built.txt\n```\n")
+        (self.d / ".gitignore").write_text("ignored.txt\n")
+        git(self.d, "add", "-A")
+        git(self.d, "commit", "-q", "-m", "x")
+        (self.d / "untracked.txt").write_text("u\n")
+        (self.d / "ignored.txt").write_text("i\n")
+        (self.d / "data.txt").write_text("uncommitted edit\n")
+
+    def run_local(self, *extra):
+        return R.main(["run", "--engine", "local", "--root", str(self.d), *extra])
+
+    def test_block_starts_in_a_copy_of_head(self):
+        self.assertEqual(self.run_local(), 0)
+        self.assertFalse((self.d / "built.txt").exists(), "the real checkout must not be written to")
+
+    def test_content_is_head_not_the_working_tree(self):
+        (self.d / "README.md").write_text(
+            "<!-- docs-run: checkout=1 -->\n```sh\ngrep -x committed data.txt\n```\n")
+        git(self.d, "commit", "-q", "-am", "readme")   # data.txt edit is committed too: restore it first
+        (self.d / "data.txt").write_text("worktree only\n")
+        self.assertEqual(self.run_local(), 1)   # HEAD now holds the edit, the work tree something else
+
+    def test_without_the_marker_the_block_is_not_in_the_checkout(self):
+        (self.d / "README.md").write_text("```sh run\ntest -f data.txt\n```\n")
+        self.assertEqual(self.run_local(), 1)
+
+    def test_config_default_and_per_block_opt_out(self):
+        (self.d / ".docs.toml").write_text("[run]\ncheckout = true\n")
+        (self.d / "README.md").write_text("```sh run\ntest -f data.txt\n```\n\n"
+                                          "<!-- docs-run: checkout=0 group=plain -->\n```sh\ntest ! -f data.txt\n```\n")
+        self.assertEqual(self.run_local(), 0)
+
+    def test_marker_values_checked(self):
+        for v in ("2", "yes", "-1", "true"):
+            with self.assertRaises(R.MarkerError, msg=v):
+                R.parse_directive(f"checkout={v}", "t")
+
+    def test_needs_a_git_checkout_root(self):
+        sub = self.d / "sub"
+        sub.mkdir()
+        (sub / "README.md").write_text("<!-- docs-run: checkout=1 -->\n```sh\ntrue\n```\n")
+        self.assertEqual(R.main(["run", "--engine", "local", "--root", str(sub)]), 2)
+        bare = Path(tempfile.mkdtemp())
+        (bare / "README.md").write_text("<!-- docs-run: checkout=1 -->\n```sh\ntrue\n```\n")
+        self.assertEqual(R.main(["run", "--engine", "local", "--root", str(bare)]), 2)
+
+    def test_podman_command_has_no_checkout_mount(self):
+        class A:
+            memory, cpus, keep_going = "4g", "4", False
+        s = {"image": "ok", "ref": f"example.org/a/b@sha256:{self.DIGEST}", "network": False, "packages": "",
+             "setup": "", "timeout": "60", "checkout": True}
+        cmd = R.podman_command(s, Path("/w"), "n", "rid", A)
+        self.assertEqual(cmd.count("-v"), 1)
+        self.assertEqual(cmd[cmd.index("-v") + 1], "/w:/docs-run:Z")   # only the work folder, which holds the copy
+        self.assertIn("--cap-drop=ALL", cmd)
+        self.assertIn("--network=none", cmd)
+
+    def test_toolchain_alias_and_package_allowlist(self):
+        (self.d / ".docs.toml").write_text(
+            f'[run]\npackages = ["jq"]\n[run.images.rust]\nref = "example.org/rust/rust:1@sha256:{self.DIGEST}"\n'
+            'network = true\npackages = ["gcc"]\n')
+        imgs = R.load_images(self.d)
+        self.assertEqual(imgs["rust"]["packages"], ["gcc"])
+        cfg = R.load_run(self.d)
+        def gs(marker):
+            (self.d / "README.md").write_text(f"<!-- docs-run: {marker} -->\n```sh run\ntrue\n```\n")
+            return R.group_settings(R.collect(self.d)[:1], cfg["images"], cfg)
+        self.assertEqual(gs("image=rust packages=gcc,jq")["ref"], f"example.org/rust/rust:1@sha256:{self.DIGEST}")
+        for bad in ("image=rust packages=gcc,curl", "packages=gcc", "packages=jq,evil"):
+            with self.assertRaises(R.MarkerError, msg=bad):
+                gs(bad)
+        (self.d / ".docs.toml").write_text('[run]\npackages = ["--installroot=/x"]\n')
+        with self.assertRaises(R.MarkerError):
+            R.load_run(self.d)
+
+    def test_allowlist_is_read_from_the_base_revision(self):
+        base = git(self.d, "rev-parse", "HEAD").strip()
+        (self.d / ".docs.toml").write_text(
+            f'[run.images.evil]\nref = "example.org/x/y@sha256:{self.DIGEST}"\nnetwork = true\n')
+        (self.d / "README.md").write_text("<!-- docs-run: image=evil -->\n```sh run\ntrue\n```\n")
+        git(self.d, "add", "-A")
+        git(self.d, "commit", "-q", "-m", "pr adds an image")
+        # from the work tree the PR's own alias works; read from the base it does not exist
+        self.assertEqual(R.main(["list", "--root", str(self.d)]), 0)
+        self.assertEqual(R.main(["list", "--root", str(self.d), "--allowlist-ref", base]), 2)
+        # an unreadable ref fails closed
+        self.assertEqual(R.main(["list", "--root", str(self.d), "--allowlist-ref", "nosuchref"]), 2)
+        self.assertEqual(R.main(["list", "--root", str(self.d), "--allowlist-ref=--x"]), 2)
+        with self.assertRaises(R.MarkerError):
+            R.load_run(self.d, "-x")
+
+    def test_base_allowlist_still_works_when_the_pr_changes_the_file(self):
+        (self.d / ".docs.toml").write_text(
+            f'[run.images.ok]\nref = "example.org/x/y@sha256:{self.DIGEST}"\n')
+        git(self.d, "add", ".docs.toml")
+        git(self.d, "commit", "-q", "-m", "base config")
+        base = git(self.d, "rev-parse", "HEAD").strip()
+        (self.d / ".docs.toml").write_text("")   # the PR deletes the alias
+        (self.d / "README.md").write_text("<!-- docs-run: image=ok -->\n```sh run\ntrue\n```\n")
+        self.assertEqual(R.main(["list", "--root", str(self.d)]), 2)
+        self.assertEqual(R.main(["list", "--root", str(self.d), "--allowlist-ref", base]), 0)
+
+
+class FailUnmarked(unittest.TestCase):
+    def test_new_unmarked_block_fails(self):
+        d = Path(tempfile.mkdtemp())
+        (d / "README.md").write_text("```sh run\ntrue\n```\n")
+        self.assertEqual(R.main(["run", "--engine", "local", "--root", str(d), "--fail-unmarked"]), 0)
+        (d / "README.md").write_text("```sh run\ntrue\n```\n\n```sh\nmake\n```\n")
+        self.assertEqual(R.main(["run", "--engine", "local", "--root", str(d), "--fail-unmarked"]), 1)
+        self.assertEqual(R.main(["list", "--root", str(d), "--fail-unmarked"]), 1)
+        (d / "README.md").write_text("```sh run\ntrue\n```\n\n<!-- docs-run: skip=\"needs root\" -->\n```sh\nmake\n```\n")
+        self.assertEqual(R.main(["list", "--root", str(d), "--fail-unmarked"]), 0)
 
 
 if __name__ == "__main__":

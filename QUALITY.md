@@ -58,7 +58,7 @@ measurement floor next to every result, so a good device is not hidden by the to
    ```sh
    sudo dnf install -y gcc git python3-pip pipx
    # facts:install kind=pipx-git repo=dsd-toolbox/dsd-measure
-   pipx install git+https://github.com/dsd-toolbox/dsd-measure@v0.1.1
+   pipx install git+https://github.com/dsd-toolbox/dsd-measure@v0.1.2
    # /facts
    dsd-measure --version
    dsd-measure init

@@ -6,6 +6,10 @@
 
 The blocks run in a container that holds ONLY the extracted blocks, never the checkout, so
 whatever they install is the PUBLISHED release (the install line in the docs is what installs it).
+Checkout mode (checkout=1 on a block, or [run] checkout = true in .docs.toml) is the one exception: the
+group starts in $HOME/checkout, a COPY of `git archive HEAD` (no .git, no untracked or ignored files), for
+build, test and example commands that need the repository. That runs the repository's own code: use it
+in that repository's CI, never on Markdown or a branch you did not write.
 
 Marking a fenced command block (sh, bash, shell, zsh, console, powershell, cmd):
     ```sh run                                  runs, must exit 0
@@ -20,7 +24,8 @@ setup= (shell command instead of dnf), expect= (regex that must match the output
 key for more; {version} becomes --version), drop= (regex; matching lines are removed from the
 block and reported, for example a line that opens a browser), group= (blocks with the same group name, from any file, share one container and one working
 folder, in README-first path order; default: one group per file),
-timeout= (seconds per group, default 1800), skip= (reason).
+timeout= (seconds per group, default 1800), checkout= (1: start in a copy of the checkout; 0: not), skip= (reason).
+packages= names must be allowlisted ([run] packages, or packages of the image in [run.images.<alias>]).
 
 Exit: 0 all marked blocks passed (and coverage met), 1 a block failed or coverage too low,
 2 a marker is malformed. Standard library only; needs podman for `run`. `--engine local` runs
@@ -35,9 +40,11 @@ import json
 import os
 import re
 import shlex
+import io
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 import time
 import tomllib
@@ -64,6 +71,7 @@ PACKAGE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$")
 CTRL_RE = re.compile(r"[\x00-\x1f\x7f]")
 MAX_TIMEOUT = 7200
 DEFAULT_TIMEOUT = 1800
+CHECKOUT_DIR = "checkout"   # under the container's $HOME: where a checkout-mode group starts
 MAX_LEN = {"setup": 1000, "expect": 500, "drop": 200, "skip": 300, "packages": 1000}
 # What dnf needs to unpack packages when the root is not read-only (everything else is dropped).
 INSTALL_CAPS = ["CHOWN", "DAC_OVERRIDE", "FOWNER", "FSETID", "SETGID", "SETUID", "SETFCAP", "SYS_CHROOT"]
@@ -129,6 +137,8 @@ def check_value(k: str, v: str, where: str) -> str:
         for pkg in v.split(","):
             if not PACKAGE_RE.match(pkg):
                 raise MarkerError(f"{where}: packages= entry {pkg!r} is not a plain package name")
+    if k == "checkout" and v not in ("0", "1"):
+        raise MarkerError(f"{where}: checkout= must be 1 (start in a copy of the checkout) or 0")
     if k == "timeout":
         if not re.fullmatch(r"[0-9]{1,5}", v) or not 1 <= int(v) <= MAX_TIMEOUT:
             raise MarkerError(f"{where}: timeout= must be a whole number of seconds from 1 to {MAX_TIMEOUT}")
@@ -153,7 +163,7 @@ def parse_directive(text: str, where: str) -> tuple[dict, list]:
         k, v = t.split("=", 1)
         if k == "expect":
             expects.append(check_value(k, v, where))
-        elif k in {"image", "packages", "setup", "drop", "group", "timeout", "skip"}:
+        elif k in {"image", "packages", "setup", "drop", "group", "timeout", "skip", "checkout"}:
             opts[k] = check_value(k, v, where)
         else:
             raise MarkerError(f"{where}: unknown docs-run key {k!r}")
@@ -162,30 +172,77 @@ def parse_directive(text: str, where: str) -> tuple[dict, list]:
     return opts, expects
 
 
-def load_images(root: Path) -> dict:
-    """The image allowlist: the built-in default plus [run.images.<alias>] from <root>/.docs.toml."""
-    images = {k: dict(v) for k, v in BUILTIN_IMAGES.items()}
-    cfg = root / ".docs.toml"
-    if cfg.is_file():
+def _read_config(root: Path, ref: str | None) -> tuple[dict, str]:
+    """The [run] table of .docs.toml: from the working tree, or (ref given) from that Git revision only.
+
+    On a pull request CI passes the base commit as ref, so the allowlist a change is judged by is the one
+    already merged, never one the change itself adds. A ref that cannot be read is an error (fail closed);
+    a revision without a .docs.toml has the built-in defaults.
+    """
+    where = f"{ref}:.docs.toml" if ref else str(root / ".docs.toml")
+    if ref:
+        if not re.fullmatch(r"[0-9A-Za-z][0-9A-Za-z._/-]{0,199}", ref):
+            raise MarkerError(f"--allowlist-ref {ref!r} is not a plain revision")
+        ok = subprocess.run(["git", "-C", str(root), "cat-file", "-e", f"{ref}^{{commit}}"], capture_output=True)
+        if ok.returncode:
+            raise MarkerError(f"--allowlist-ref {ref}: not a commit in {root}")
+        r = subprocess.run(["git", "-C", str(root), "cat-file", "-e", f"{ref}:.docs.toml"], capture_output=True)
+        if r.returncode:
+            return {}, where
+        data = subprocess.run(["git", "-C", str(root), "show", f"{ref}:.docs.toml"], capture_output=True).stdout
+    else:
+        cfg = root / ".docs.toml"
+        if not cfg.is_file():
+            return {}, where
         try:
-            with cfg.open("rb") as fh:
-                raw = tomllib.load(fh)
-        except (tomllib.TOMLDecodeError, OSError) as e:
+            data = cfg.read_bytes()
+        except OSError as e:
             raise MarkerError(f"{cfg}: cannot read: {e}") from e
-        table = raw.get("run", {}).get("images", {})
-        if not isinstance(table, dict):
-            raise MarkerError(f"{cfg}: [run.images] must be a table")
-        for alias, ent in table.items():
-            if not ALIAS_RE.match(alias) or not isinstance(ent, dict):
-                raise MarkerError(f"{cfg}: bad image alias {alias!r}")
-            ref, net = ent.get("ref", ""), ent.get("network", False)
-            if not isinstance(ref, str) or not REF_RE.match(ref):
-                raise MarkerError(f"{cfg}: image {alias!r}: ref must be a full reference pinned by digest "
-                                  f"(name@sha256:<64 hex>)")
-            if not isinstance(net, bool):
-                raise MarkerError(f"{cfg}: image {alias!r}: network must be true or false")
-            images[alias] = {"ref": ref, "network": net}
-    return images
+    try:
+        return tomllib.loads(data.decode()), where
+    except (tomllib.TOMLDecodeError, UnicodeDecodeError) as e:
+        raise MarkerError(f"{where}: cannot read: {e}") from e
+
+
+def _check_packages(v, where: str) -> list[str]:
+    if not isinstance(v, list) or not all(isinstance(x, str) and PACKAGE_RE.match(x) for x in v):
+        raise MarkerError(f"{where}: packages must be a list of plain package names")
+    return list(v)
+
+
+def load_run(root: Path, ref: str | None = None) -> dict:
+    """The run configuration: image allowlist, package allowlist, checkout default.
+
+    [run.images.<alias>]: ref (digest-pinned), network, packages (names a block may install on that image).
+    [run]: packages (names allowed on every image), checkout (true: every block starts in a copy of the checkout).
+    """
+    raw, where = _read_config(root, ref)
+    images = {k: {**v, "packages": []} for k, v in BUILTIN_IMAGES.items()}
+    run = raw.get("run", {})
+    if not isinstance(run, dict):
+        raise MarkerError(f"{where}: [run] must be a table")
+    table = run.get("images", {})
+    if not isinstance(table, dict):
+        raise MarkerError(f"{where}: [run.images] must be a table")
+    for alias, ent in table.items():
+        if not ALIAS_RE.match(alias) or not isinstance(ent, dict):
+            raise MarkerError(f"{where}: bad image alias {alias!r}")
+        ref_, net = ent.get("ref", ""), ent.get("network", False)
+        if not isinstance(ref_, str) or not REF_RE.match(ref_):
+            raise MarkerError(f"{where}: image {alias!r}: ref must be a full reference pinned by digest "
+                              f"(name@sha256:<64 hex>)")
+        if not isinstance(net, bool):
+            raise MarkerError(f"{where}: image {alias!r}: network must be true or false")
+        images[alias] = {"ref": ref_, "network": net, "packages": _check_packages(ent.get("packages", []), where)}
+    checkout = run.get("checkout", False)
+    if not isinstance(checkout, bool):
+        raise MarkerError(f"{where}: [run] checkout must be true or false")
+    return {"images": images, "packages": _check_packages(run.get("packages", []), where), "checkout": checkout}
+
+
+def load_images(root: Path, ref: str | None = None) -> dict:
+    """The image allowlist: the built-in default plus [run.images.<alias>]."""
+    return load_run(root, ref)["images"]
 
 
 CMD_START = re.compile(r"^(\$ |sudo |curl |wget |tar |cd |mkdir |git |cargo |pip3? |pipx |python3? |dnf |apt(-get)? |brew |"
@@ -319,7 +376,7 @@ def groups_of(blocks: list[Block]) -> dict[tuple[str, str], list[Block]]:
     return g
 
 
-def group_settings(bs: list[Block], images: dict | None = None) -> dict:
+def group_settings(bs: list[Block], images: dict | None = None, cfg: dict | None = None) -> dict:
     s = {"image": DEFAULT_ALIAS, "packages": "", "setup": "", "timeout": str(DEFAULT_TIMEOUT)}
     for b in bs:
         for k in s:
@@ -328,12 +385,39 @@ def group_settings(bs: list[Block], images: dict | None = None) -> dict:
                     raise MarkerError(f"{b.file}:{b.line}: group has conflicting {k}= "
                                       f"({s[k]!r} and {b.opts[k]!r})")
                 s[k] = b.opts[k]
+    # checkout mode: a group starts in a copy of the checkout when any block asks (checkout=1), or the
+    # repository's [run] checkout = true makes it the default and no block says checkout=0
+    asks = [b.opts["checkout"] for b in bs if "checkout" in b.opts]
+    s["checkout"] = "1" in asks or (bool(cfg and cfg["checkout"]) and "0" not in asks)
     if images is not None:
         if s["image"] not in images:
             raise MarkerError(f"{bs[0].file}:{bs[0].line}: image={s['image']} is not in the allowlist "
                               f"([run.images] in .docs.toml; known: {', '.join(sorted(images))})")
         s["ref"], s["network"] = images[s["image"]]["ref"], images[s["image"]]["network"]
+        if s["packages"]:
+            ok = set(images[s["image"]].get("packages", [])) | set(cfg["packages"] if cfg else [])
+            bad = [p for p in s["packages"].split(",") if p not in ok]
+            if bad:
+                raise MarkerError(f"{bs[0].file}:{bs[0].line}: packages= {', '.join(bad)} not in the allowlist "
+                                  f"([run] packages or [run.images.{s['image']}] packages in .docs.toml)")
     return s
+
+
+def export_checkout(root: Path, dest: Path) -> None:
+    """Copy the committed tree of HEAD (git archive: no .git, no untracked or ignored files) into dest."""
+    top = subprocess.run(["git", "-C", str(root), "rev-parse", "--show-toplevel"], capture_output=True, text=True)
+    if top.returncode or Path(top.stdout.strip()).resolve() != root.resolve():
+        raise MarkerError(f"checkout mode needs --root to be the top of a Git checkout ({root})")
+    p = subprocess.Popen(["git", "-C", str(root), "archive", "--format=tar", "HEAD"],
+                         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    dest.mkdir(parents=True, exist_ok=True)
+    try:
+        with tarfile.open(fileobj=p.stdout, mode="r|") as tf:
+            tf.extractall(dest, filter="data")   # refuses absolute paths, '..' and device files
+    finally:
+        err = p.stderr.read().decode(errors="replace")
+        if p.wait():
+            raise MarkerError(f"git archive HEAD failed in {root}: {err.strip()[-300:]}")
 
 
 def podman_command(s: dict, work: Path, name: str, run_id: str, args) -> list[str]:
@@ -359,16 +443,17 @@ def podman_command(s: dict, work: Path, name: str, run_id: str, args) -> list[st
 # --------------------------------------------------------------------------- running
 
 
-def run_group(key, bs: list[Block], args, run_id: str, images: dict) -> None:
-    s = group_settings(bs, images)
+def run_group(key, bs: list[Block], args, run_id: str, images: dict, cfg: dict | None = None) -> None:
+    s = group_settings(bs, images, cfg)
     work = Path(tempfile.mkdtemp(prefix="docs-run-", dir=args.tmpdir))
     try:
         setup = s["setup"]
         if not setup and s["packages"]:
             setup = "dnf -y -q --setopt=install_weak_deps=False install " + " ".join(s["packages"].split(","))
+        start = f"${{DOCS_RUN_HOME:-$HOME}}" + (f"/{CHECKOUT_DIR}" if s["checkout"] else "")
         driver = ["#!/bin/bash", "set -u",
                   "export PATH=\"$HOME/.local/bin:$PATH\"   # what a Fedora login shell gives a user",
-                  f"cd \"${{DOCS_RUN_HOME:-$HOME}}\""]
+                  f"cd \"{start}\""]
         if setup and (args.engine == "podman" or args.run_setup):
             d = "/docs-run" if args.engine == "podman" else str(work)
             driver += [f"( {setup} ) > {d}/setup.log 2>&1 || {{ echo 99 > {d}/setup.rc; exit 0; }}"]
@@ -381,9 +466,11 @@ def run_group(key, bs: list[Block], args, run_id: str, images: dict) -> None:
                 f"[ \"$(cat {{D}}/rc{n})\" = 0 ] || [ -n \"${{DOCS_RUN_KEEP_GOING:-}}\" ] || exit 0",
             ]
         script = "\n".join(driver) + "\n"
+        if s["checkout"]:   # a COPY of the committed tree on the work folder; the checkout itself is never mounted
+            export_checkout(args.root_path, work / "home" / CHECKOUT_DIR)
         if args.engine == "local":
             home = work / "home"
-            home.mkdir()
+            home.mkdir(exist_ok=True)
             (work / "driver.sh").write_text(script.replace("{D}", str(work)))
             env = {**os.environ, "DOCS_RUN_HOME": str(home), "HOME": str(home)}
             if args.keep_going:
@@ -391,7 +478,7 @@ def run_group(key, bs: list[Block], args, run_id: str, images: dict) -> None:
             cmd = ["bash", str(work / "driver.sh")]
         else:
             (work / "driver.sh").write_text(script.replace("{D}", "/docs-run"))
-            (work / "home").mkdir()
+            (work / "home").mkdir(exist_ok=True)
             env = None
             cmd = podman_command(s, work, f"docs-run-{run_id}-{uuid.uuid4().hex[:6]}", run_id, args)
         try:
@@ -490,9 +577,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--tmpdir", default=None)
     ap.add_argument("--json", help="write the results to this file")
     ap.add_argument("--only", help="run only blocks from this file")
+    ap.add_argument("--allowlist-ref", metavar="REV",
+                    help="read [run] (image and package allowlists, checkout default) from .docs.toml at this Git "
+                         "revision instead of the working tree; CI passes the base commit on a pull request")
     ap.add_argument("--classify", action="store_true", help="list: guess why each unmarked block cannot run")
     a = ap.parse_args(argv)
     root = Path(a.root).resolve()
+    a.root_path = root
     if a.version_of:
         req = urllib.request.Request(f"https://api.github.com/repos/{a.version_of}/releases/latest",
                                      headers={"User-Agent": "docs-run (dsd-toolbox)"})
@@ -509,9 +600,10 @@ def main(argv: list[str] | None = None) -> int:
         if a.only:
             blocks = [b for b in blocks if b.file == a.only]
         groups = groups_of(blocks)
-        images = load_images(root)
+        cfg = load_run(root, a.allowlist_ref)
+        images = cfg["images"]
         for bs in groups.values():
-            group_settings(bs, images)
+            group_settings(bs, images, cfg)
     except MarkerError as e:
         print(f"ERROR {e}", file=sys.stderr)
         return 2
@@ -524,7 +616,10 @@ def main(argv: list[str] | None = None) -> int:
         executed = True
         try:
             for key, bs in groups.items():
-                run_group(key, bs, a, run_id, images)
+                run_group(key, bs, a, run_id, images, cfg)
+        except MarkerError as e:
+            print(f"ERROR {e}", file=sys.stderr)
+            return 2
         finally:
             if a.engine == "podman":   # remove anything this run left behind
                 ids = subprocess.run(["podman", "ps", "-aq", "--filter", f"label=docs-run={run_id}"],
