@@ -25,3 +25,19 @@ reason = "needs a login"
 [[allow]]
 url = "https://www.academia.edu/"
 reason = "login wall"
+
+[[allow]]
+url = "https://www.aes.org/"
+reason = "bot wall (403 to scripts)"
+
+[[allow]]
+url = "https://aes2.org/"
+reason = "bot wall (403 to scripts)"
+
+[[allow]]
+url = "https://doi.org/"
+reason = "redirects to publishers that answer 403 to scripts"
+
+[[allow]]
+url = "https://www.iso.org/"
+reason = "bot wall (403 to scripts)"

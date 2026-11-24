@@ -352,19 +352,31 @@ def page_rules(f: File) -> None:
     depth = f.rel.count("/") - 1                      # docs/x.md -> 0, docs/install/x.md -> 1
     up = "../" * (depth + 1)
     display = cfg.raw.get("display_name", cfg.name)
-    first = first_prose(f)
+    first = next((ln for ln in f.lines if ln.kind == "prose" and ln.text.strip()
+                  and not re.match(r"\s*<(img|picture|a |/a)", ln.text)), None)
     is_index = f.rel == "docs/README.md"
+    title = h1[0].text if h1 else ""
+    folder_index = f.rel.endswith("/README.md") and depth >= 1
+    folder_title = f.rel.split("/")[-2].replace("-", " ").capitalize()
     if is_index:
         want = f"[{display}]({up}README.md) › Documentation"
     else:
-        title = h1[0].text if h1 else ""
         want = f"[{display}]({up}README.md) › [Documentation]({'../' * depth}README.md) › {title}"
     if not first:
         f.add("breadcrumb", 1, "empty page")
-    elif dl.plain(first.text) != dl.plain(want) or not first.text.strip().startswith("["):
-        f.add("breadcrumb", first.no, f"first line should be: {want}")
-    elif first.text.strip() != want:
-        f.add("breadcrumb", first.no, f"breadcrumb links should be: {want}")
+    else:
+        got = first.text.strip()
+        parts = [x.strip() for x in got.split("›")]
+        ok = got == want
+        if not ok and len(parts) >= 3 and not is_index:
+            # extra middle crumbs are folder indexes (docs/install/x.md: ... › [Install](README.md) › Title);
+            # a folder's own README may end in the folder name instead of its H1
+            middle_ok = all(re.fullmatch(r"\[[^\]]+\]\((?:\.\./)*README\.md\)", m) for m in parts[2:-1])
+            last_ok = parts[-1] == title or (folder_index and parts[-1] in (folder_title, title))
+            ok = (parts[0] == f"[{display}]({up}README.md)" and parts[1] == f"[Documentation]({'../' * depth}README.md)"
+                  and middle_ok and last_ok and len(parts) - 3 <= depth)
+        if not ok:
+            f.add("breadcrumb", first.no, f"first line should be: {want}")
     if h1:
         para: list[str] = []
         started = False
@@ -663,9 +675,10 @@ def changelog_rules(f: File) -> None:
 def release_rules(cfg: dl.Config, files: dict[str, File]) -> list[dl.Finding]:
     block_file = Path(__file__).resolve().parent / "release-step.md"
     block = block_file.read_text().strip() if block_file.exists() else ""
-    cands = cfg.section("lint").get("release_files") or [
-        "docs/release.md", "docs/release-test-plan.md", "RELEASING.md", "docs/development.md", "docs/test-plan.md"]
-    present = [c for c in cands if (cfg.root / c).exists()]
+    primary = cfg.section("lint").get("release_files") or [
+        "docs/release.md", "docs/release-test-plan.md", "docs/test-plan.md", "RELEASING.md"]
+    fallback = ["docs/development.md"]      # existing repos may keep release steps there (docs-style.md, clarification 6)
+    present = [c for c in primary if (cfg.root / c).exists()] or [c for c in fallback if (cfg.root / c).exists()]
     if not present:
         return [dl.Finding("docs/release.md", 1, "release-step", "no release document found (docs/release.md, docs/release-test-plan.md, RELEASING.md ...)")]
     out = []
@@ -729,10 +742,8 @@ def main(argv: list[str] | None = None) -> int:
     pages = {r: f for r, f in files.items() if not dl.matches(r, excl)}
     findings += index_rules(cfg, pages)
     for pat in lc.get("required_files", ["README.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md", "LICENSE*", "docs/README.md"]):
-        if "/" not in pat and "*" not in pat:
-            ok = (root / pat).exists()
-        else:
-            ok = any(root.glob(pat))
+        pats = ["LICENSE*", "LICENCE*", "COPYING*"] if pat == "LICENSE*" else [pat]
+        ok = any((root / q).exists() if "*" not in q else any(root.glob(q)) for q in pats)
         if not ok:
             findings.append(dl.Finding(pat, 1, "required-file", f"{pat} does not exist"))
     if lc.get("release_step", True):

@@ -177,7 +177,7 @@ def fetch(url: str, gate: HostGate, retries: int, timeout: float) -> str | None:
     for attempt in range(retries + 1):
         if attempt:
             time.sleep(min(2 ** attempt * 2, 30))
-        req = urllib.request.Request(url.split("#")[0], headers={"User-Agent": USER_AGENT, "Accept": "*/*"})
+        req = urllib.request.Request(url.split("#")[0], headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml,*/*;q=0.8"})
         try:
             with gate(host), urllib.request.urlopen(req, timeout=timeout) as r:
                 r.read(1)
@@ -189,6 +189,8 @@ def fetch(url: str, gate: HostGate, retries: int, timeout: float) -> str | None:
                     time.sleep(min(int(e.headers.get("Retry-After", "10")), 60))
                 except ValueError:
                     pass
+            elif e.code == 404 and host == "github.com" and attempt < 1:
+                continue            # github.com answers 404 for pages that exist when it is under load; ask once more
             elif e.code < 500 and e.code != 408:
                 return reason
         except (urllib.error.URLError, TimeoutError, OSError) as e:

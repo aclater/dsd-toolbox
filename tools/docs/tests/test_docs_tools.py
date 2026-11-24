@@ -178,6 +178,22 @@ class LintTests(Base):
         self.rule_fires("see-also", {"docs/user-guide.md": ug.replace("- [Changelog](../CHANGELOG.md): what changed\n", "")})
         self.rule_fires("footer", {"docs/user-guide.md": ug.replace(FOOTER, "")})
 
+    def test_nested_pages_and_icons(self):
+        page = FILES["docs/user-guide.md"].replace("[demo](../README.md) › [Documentation](README.md) › User guide",
+                                                   "[demo](../../README.md) › [Documentation](../README.md) › [Install](README.md) › Install demo")
+        page = page.replace("# User guide", "# Install demo").replace("(README.md): the index", "(../README.md): the index").replace("(../CHANGELOG.md)", "(../../CHANGELOG.md)")
+        idx = FILES["docs/README.md"].replace("- [User guide](user-guide.md): a tour", "- [User guide](user-guide.md): a tour\n- [Install](install/README.md): install demo")
+        folder = page.replace("› Install demo", "› Install", 1).replace("[Install](README.md) › Install", "Install")
+        folder = folder.replace("[demo](../../README.md) › [Documentation](../README.md) › Install", "[demo](../../README.md) › [Documentation](../README.md) › Install")
+        extra = {"docs/install/README.md": folder, "docs/install/linux.md": page.replace("(../README.md): the index", "(../README.md): the index"),
+                 "docs/README.md": idx.replace("install/README.md): install demo", "install/README.md): install demo")}
+        self.assertEqual(lint(self.repo(extra)), ["index-unlisted"])      # linux.md is not in the install index
+        folder_listing = folder.replace("## Quick tour\n\nRun it.", "## Pages\n\n- [Linux](linux.md): Linux install")
+        extra["docs/install/README.md"] = folder_listing
+        self.assertEqual(lint(self.repo(extra)), [])
+        icon = FILES["docs/README.md"].replace("[demo](../README.md) › Documentation", '<img src="assets/icon-96.png" alt="" width="96">\n\n[demo](../README.md) › Documentation')
+        self.assertEqual(lint(self.repo({"docs/README.md": icon})), [])
+
     def test_index(self):
         self.rule_fires("index-unlisted", {"docs/extra.md": FILES["docs/user-guide.md"].replace("User guide", "Extra")})
         self.rule_fires("index-missing", {"docs/README.md": None})

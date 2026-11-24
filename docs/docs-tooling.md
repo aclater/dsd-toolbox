@@ -44,6 +44,26 @@ reason = "bot wall: opened by hand"
 
 Every key is optional. A project without `.docs.toml` is checked with the defaults and the name of its folder.
 
+## Settings
+
+All keys in `.docs.toml` are optional.
+
+| Key | Meaning | Default |
+|---|---|---|
+| `name`, `display_name` | Repository name (links, URLs) and the name shown in breadcrumbs and the README title | the folder name |
+| `kind` | `app`, `library` (also needs a docs.rs badge) or `overview` (a Projects table, Scorecard badge only) | `app` |
+| `default_branch` | Branch named in badge URLs | `main` |
+| `footer` | Require the "Part of the DSD Toolbox" line | `true` |
+| `moved_repos` | Repositories, besides the toolbox projects, whose `aclater/` links fail | none |
+| `[lint] exclude`, `allow_words`, `proper_nouns` | Files skipped by the style rules, words the spelling and terminology lists accept, words a heading may capitalise | none |
+| `[lint] index_exclude`, `required_files`, `release_files`, `ignore` | Pages the index need not list, the repository files that must exist, the release documents that carry the audit block, and `{path, rule, reason}` waivers | the standard lists |
+| `[readme] badges`, `title`, `sections`, `allow_extra`, `pitch_max` | Override the badge set derived from the workflows and manifests, the title, the section list, extra sections allowed, and the pitch length | derived |
+| `[links] exclude`, `exclude_files`, `[[links.allow]]` | URL patterns and files not checked, and URLs not fetched because the site blocks scripts (with a reason) | the shared list in `tools/docs/links-allow.toml` |
+| `[touched] code`, `docs`, `ignore` | Path globs: a change to `code` needs a change to `docs`; `ignore` never counts as code | source folders, README, `docs/` |
+| `[audit] help_command`, `history` | A command whose output lists the options the docs may name; files that keep history (version mentions there are not flagged) | none |
+
+The clean-side repositories do not fetch these tools; they get the same rules as a written outline.
+
 ## Run them locally
 
 ```sh
