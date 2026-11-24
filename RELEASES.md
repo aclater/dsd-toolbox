@@ -667,8 +667,8 @@ and Windows x86_64.
   notarised by Apple; faster one-frame calls; an SSE2 level for 32-bit x86.
 - **0.1.0** (2026-11-23): first release; reproduces scarletbook-pcm 0.7.0's output byte for byte.
 
-Releases: [0.1.0](https://github.com/aclater/dsd2pcm-rs/releases/tag/v0.1.0) (2026-11-23),
-[0.1.1](https://github.com/aclater/dsd2pcm-rs/releases/tag/v0.1.1) (2026-11-23).
+Releases: [0.1.0](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.1.0) (2026-11-23),
+[0.1.1](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.1.1) (2026-11-23).
 
 ## dsd-measure
 

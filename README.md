@@ -10,11 +10,11 @@ Open tools for reading Super Audio CD disc images and DSD audio: a specification
 scratch, a Rust library built from it, and the tools that use it. This
 repository is the map of how they fit together; it holds no code.
 
+## Projects
+
 They are built for speed: sacdfs decodes stereo and multichannel DST-compressed discs to DSF in
 real time even on a 2011 dual-core 32-bit Atom D2700 NAS, and the conversion libraries run
 many times faster than real time on any recent desktop CPU.
-
-## Projects
 
 |  | Project | What |
 |---|---|---|
@@ -23,7 +23,7 @@ many times faster than real time on any recent desktop CPU.
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/beets-pysacd/main/docs/assets/icon-64.png" alt="" width="32"> | [beets‑pysacd](https://github.com/dsd-toolbox/beets-pysacd) | Imports SACD images into a beets music library, with MusicBrainz matching |
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-measure/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd‑measure](https://github.com/dsd-toolbox/dsd-measure) | Measures DSD and PCM converters the way audiophile reviewers do, and writes one readable report |
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-toolbox/main/docs/assets/projects/scarletbook-rs-64.png" alt="" width="32"> | [scarletbook‑rs](https://github.com/aclater/scarletbook-rs) | Rust and C library that reads SACD images and decodes DST |
-| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd2pcm-rs/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd2pcm‑rs](https://github.com/aclater/dsd2pcm-rs) | Rust and C library and CLI: DSD to PCM, and DSF, DFF and WAV files |
+| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd2pcm-rs/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd2pcm‑rs](https://github.com/dsd-toolbox/dsd2pcm-rs) | Rust and C library and CLI: DSD to PCM, and DSF, DFF and WAV files |
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-toolbox/main/docs/assets/projects/sacd-spec-64.png" alt="" width="32"> | [sacd‑spec](https://github.com/aclater/sacd-spec) | Specification of the SACD disc format, with a test corpus |
 
 
@@ -42,16 +42,18 @@ Which project do you need?
   or later and has wheels for Linux (x86_64 and aarch64), macOS (Intel and Apple Silicon) and
   Windows x64.
 - **Measure a DSD-to-PCM converter's accuracy**, with readings like those published by
-  Archimago, ASR and Stereophile:
+  [Archimago](https://archimago.blogspot.com/), [ASR](https://www.audiosciencereview.com/) and
+  [Stereophile](https://www.stereophile.com/content/measurements-maps-precision):
   [dsd-measure](https://github.com/dsd-toolbox/dsd-measure#quick-start). It needs Python 3.11 or
   later and installs from GitHub with pipx.
 - **Build your own software**: the Rust library [scarletbook-rs](https://github.com/aclater/scarletbook-rs)
-  for SACD images, [dsd2pcm-rs](https://github.com/aclater/dsd2pcm-rs#quick-start) for DSD to PCM
+  for SACD images, [dsd2pcm-rs](https://github.com/dsd-toolbox/dsd2pcm-rs#quick-start) for DSD to PCM
   and DSF/DFF/WAV files, or [sacd-spec](https://github.com/aclater/sacd-spec#quick-start) to
   write or test a reader of your own.
 
 ## Documentation
 
+- [Documentation index](docs/README.md): every document in this repository
 - [Clean room](docs/clean-room.md): how sacd-spec and scarletbook-rs are kept independent
 - [Decisions](DECISIONS.md): the major decisions and why they were made
 - [Releases](RELEASES.md): what each minor version line brought, per project
@@ -59,6 +61,7 @@ Which project do you need?
 - [CI/CD](docs/ci-cd.md): how changes are reviewed and releases are built, signed and published
 - [Security](SECURITY.md): how to report a vulnerability in any of the projects (privately,
   never in a public issue)
+- [Documentation tooling](docs/docs-tooling.md): the shared checks that keep every project's documentation to one standard
 - [Contributing](CONTRIBUTING.md)
 - [Board](https://github.com/users/aclater/projects/1): open issues and pull requests of the
   projects in one view
