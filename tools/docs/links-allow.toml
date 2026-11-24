@@ -1,0 +1,27 @@
+# External sites that refuse automated requests (bot walls, login walls) or rate-limit hard.
+# docs_links.py does not fetch URLs under these prefixes; a person opens them by hand when a
+# page changes. Every entry says why. Repositories add their own in .docs.toml ([[links.allow]]).
+
+[[allow]]
+url = "https://www.audiosciencereview.com/"
+reason = "bot wall (403 to scripts)"
+
+[[allow]]
+url = "https://www.stereophile.com/"
+reason = "bot wall (403 to scripts)"
+
+[[allow]]
+url = "http://audio.rightmark.org/"
+reason = "plain http host, often unreachable from CI"
+
+[[allow]]
+url = "https://www.linkedin.com/"
+reason = "login wall (999 to scripts)"
+
+[[allow]]
+url = "https://musicbrainz.org/account/"
+reason = "needs a login"
+
+[[allow]]
+url = "https://www.academia.edu/"
+reason = "login wall"

@@ -1,0 +1,52 @@
+# Reusable: docs-lint (T3). Holds every Markdown file to the DSD Toolbox documentation standard:
+# page shape, README shape and badges, British spelling, terminology, no old-owner links.
+#
+# Adopt it with one job (the sha is a commit of dsd-toolbox/dsd-toolbox; use the same sha twice):
+#
+#   docs-lint:
+#     uses: dsd-toolbox/dsd-toolbox/.github/workflows/docs-lint.yml@SHA
+#     with:
+#       tools_ref: SHA
+#
+# Settings live in .docs.toml in the calling repository (docs/docs-tooling.md).
+
+name: docs-lint
+
+on:
+  workflow_call:
+    inputs:
+      tools_ref:
+        description: "Commit of dsd-toolbox/dsd-toolbox whose tools/docs to run; empty uses the calling repository's own copy"
+        type: string
+        default: ""
+      name:
+        description: "Repository name when .docs.toml does not give one"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: docs lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch the docs tools
+        if: inputs.tools_ref != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: dsd-toolbox/dsd-toolbox
+          ref: ${{ inputs.tools_ref }}
+          path: .docs-tools
+          persist-credentials: false
+
+      - name: Lint the documentation
+        env:
+          TOOLS: ${{ inputs.tools_ref != '' && '.docs-tools/tools/docs' || 'tools/docs' }}
+          NAME: ${{ inputs.name }}
+        run: python3 -I "$TOOLS/docs_lint.py" . ${NAME:+--name "$NAME"}
