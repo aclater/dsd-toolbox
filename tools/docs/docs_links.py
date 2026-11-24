@@ -44,7 +44,7 @@ def collect(path: Path, text: str):
     for ln in dl.scan(text):
         if ln.kind != "prose":
             continue
-        s = dl.blank_code_spans(ln.text)
+        s = re.sub(r"<!--.*?-->", "", dl.blank_code_spans(ln.text))  # generated-region markers are not links
         seen: set[str] = set()
         for m in dl.INLINE_DEST_RE.finditer(s):
             seen.add(m[3])

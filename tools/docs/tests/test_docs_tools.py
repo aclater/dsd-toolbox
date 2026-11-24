@@ -56,7 +56,7 @@ More ways to install are in the [user guide](docs/user-guide.md).
 
 ## Licence and credits
 
-MIT. Thanks to everyone upstream.
+Code: MIT. Text and data: CC BY 4.0. Thanks to everyone upstream.
 
 {FOOTER}
 """,
@@ -64,6 +64,7 @@ MIT. Thanks to everyone upstream.
     "CONTRIBUTING.md": "# Contributing\n\nSend a change.\n",
     "SECURITY.md": "# Security\n\nTell us privately.\n",
     "LICENSE": "MIT\n",
+    "CITATION.cff": "cff-version: 1.2.0\ntitle: demo\n",
     ".docs.toml": 'name = "demo"\nmoved_repos = ["demo"]\n',
     "docs/assets/icon-96.png": "png\n",
     "docs/README.md": f"""[demo](../README.md) › Documentation
@@ -164,6 +165,12 @@ class LintTests(Base):
 
     def rule_fires(self, rule: str, extra: dict, good_text: str | None = None):
         self.assertIn(rule, lint(self.repo(extra)), rule)
+
+    def test_licence_citation_notice(self):
+        self.rule_fires("readme-licence", {"README.md": FILES["README.md"].replace("Text and data: CC BY 4.0. ", "")})
+        self.rule_fires("required-file", {"CITATION.cff": None})
+        self.rule_fires("required-file", {"LICENSE": "Apache License\nVersion 2.0, January 2004\n", "NOTICE": None, "Cargo.toml": '[package]\nlicense = "MIT OR Apache-2.0"\n'})
+        self.assertNotIn("required-file", lint(self.repo({"Cargo.toml": '[package]\nlicense = "MIT OR Apache-2.0"\n', "NOTICE": "demo\n"})))
 
     def test_page_shape(self):
         ug = FILES["docs/user-guide.md"]
@@ -269,8 +276,8 @@ class LintTests(Base):
 
     def test_cited_source_must_be_linked(self):
         rd = FILES["README.md"]
-        self.assertIn("cited-source", lint(self.repo({"README.md": rd.replace("MIT. Thanks", "MIT. Measured like Archimago does. Thanks")})))
-        ok = rd.replace("MIT. Thanks", "MIT. Measured like [Archimago](https://archimago.blogspot.com/) does. Thanks")
+        self.assertIn("cited-source", lint(self.repo({"README.md": rd.replace("CC BY 4.0. Thanks", "CC BY 4.0. Measured like Archimago does. Thanks")})))
+        ok = rd.replace("CC BY 4.0. Thanks", "CC BY 4.0. Measured like [Archimago](https://archimago.blogspot.com/) does. Thanks")
         self.assertEqual(lint(self.repo({"README.md": ok})), [])
 
     def test_text_rules_leave_code_and_names_alone(self):

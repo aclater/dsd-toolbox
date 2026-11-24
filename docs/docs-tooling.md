@@ -9,7 +9,7 @@ The shared tools that hold every project's documentation to one standard, and ho
 | Tool | What it checks | Workflow |
 |---|---|---|
 | `docs_links.py` | Every link in every Markdown file: relative links, `#anchors`, links into the repository itself, and (weekly) every external URL | `docs-links.yml` |
-| `docs_lint.py` | Page shape, README shape and badges, repository files, CHANGELOG format, British spelling, terminology, no emoji, no placeholders, no links to the old owner, no private details, the release step | `docs-lint.yml` |
+| `docs_lint.py` | Page shape, README shape and badges, repository files (including `CITATION.cff`, and `NOTICE` for Apache-2.0 code), a README licence section that names the documentation licence (CC BY 4.0) apart from the code licence, CHANGELOG format, British spelling, terminology, no emoji, no placeholders, no links to the old owner, no private details, the release step | `docs-lint.yml` |
 | `docs_touched.py` | A change to code, options or behaviour files also changes the README, `docs/` or CHANGELOG, or says `Docs: none needed — <reason>` | `docs-touched.yml` |
 | `docs_audit.py` | After a release: the checklist of versions, options and platforms to compare. Monthly: lint, links and facts for every project | `docs-audit.yml`, `docs-monthly.yml` |
 
@@ -57,6 +57,7 @@ All keys in `.docs.toml` are optional.
 | `moved_repos` | Repositories, besides the toolbox projects, whose `aclater/` links fail | none |
 | `[lint] exclude`, `allow_words`, `proper_nouns` | Files skipped by the style rules, words the spelling and terminology lists accept, words a heading may capitalise | none |
 | `[lint] index_exclude`, `required_files`, `release_files`, `ignore` | Pages the index need not list, the repository files that must exist, the release documents that carry the audit block, and `{path, rule, reason}` waivers | the standard lists |
+| `[lint] citation`, `notice`, `docs_licence` | Require `CITATION.cff`, require `NOTICE` for Apache-2.0 code, and the documentation licence the README must name | `true`, `true`, `CC BY 4.0` |
 | `[readme] badges`, `title`, `sections`, `allow_extra`, `pitch_max` | Override the badge set derived from the workflows and manifests, the title, the section list, extra sections allowed, and the pitch length | derived |
 | `[links] exclude`, `exclude_files`, `[[links.allow]]` | URL patterns and files not checked, and URLs not fetched because the site blocks scripts (with a reason) | the shared list in `tools/docs/links-allow.toml` |
 | `[touched] code`, `docs`, `ignore` | Path globs: a change to `code` needs a change to `docs`; `ignore` never counts as code | source folders, README, `docs/` |

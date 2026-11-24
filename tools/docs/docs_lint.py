@@ -48,7 +48,7 @@ RULES = {
     "readme-quickstart": "README Quick start has a command block (or links, for an overview)",
     "readme-docs": "README Documentation is a link list into docs/",
     "readme-licence": "README Licence and credits section",
-    "required-file": "the standard repository files exist",
+    "required-file": "the standard repository files exist (incl. CITATION.cff, and NOTICE for Apache-2.0 code)",
     "changelog-format": "CHANGELOG follows Keep a Changelog",
     "release-step": "a release document carries the post-release docs audit block",
     "spelling": "British spelling in prose",
@@ -638,6 +638,11 @@ def readme_rules(f: File) -> None:
     lic = f.section("Licence and credits")
     if lic and not any(ln.text.strip() for ln in lic[1] if ln.kind == "prose"):
         f.add("readme-licence", lic[0], "Licence and credits is empty")
+    elif lic:
+        want = f.cfg.section("lint").get("docs_licence", "CC BY 4.0")
+        body = " ".join(ln.text for ln in lic[1] if ln.kind == "prose")
+        if re.sub(r"[\s\u00a0\u2011-]+", " ", want).lower() not in re.sub(r"[\s\u00a0\u2011-]+", " ", body).lower():
+            f.add("readme-licence", lic[0], f"Licence and credits does not name the documentation licence ({want}) separately from the code licence")
     if cfg.footer:
         last = next((ln for ln in reversed(f.lines) if ln.text.strip()), None)
         if not last or last.text.strip() != dl.FOOTER:
@@ -746,6 +751,13 @@ def main(argv: list[str] | None = None) -> int:
         ok = any((root / q).exists() if "*" not in q else any(root.glob(q)) for q in pats)
         if not ok:
             findings.append(dl.Finding(pat, 1, "required-file", f"{pat} does not exist"))
+    if lc.get("citation", True) and not (root / "CITATION.cff").exists():
+        findings.append(dl.Finding("CITATION.cff", 1, "required-file", "CITATION.cff does not exist"))
+    if lc.get("notice", True) and not any(root.glob("NOTICE*")):
+        lic_text = " ".join(read_text_file(root, str(q.relative_to(root))) for g in ("LICENSE*", "LICENCE*", "COPYING*") for q in root.glob(g))
+        spdx = derive_spdx(root) or ""
+        if "apache" in spdx.lower() or re.search(r"Apache License,? Version 2\.0", lic_text):
+            findings.append(dl.Finding("NOTICE", 1, "required-file", "NOTICE does not exist (required for Apache-2.0 and MIT OR Apache-2.0 code)"))
     if lc.get("release_step", True):
         findings += release_rules(cfg, files)
     # later findings from index_rules/add() may have been suppressed in-file; index_rules adds

@@ -117,7 +117,7 @@ def check(root: Path, name: str | None, external: bool, outdir: Path | None) -> 
     steps.append(("docs-links" + (" (offline and external)" if external else " (offline)"), rc, text))
     facts = HERE / "docs_facts.py"
     if facts.exists():
-        rc, text = run([str(facts), "--check"], root)
+        rc, text = run([str(facts), "check", "--root", str(root)], root)
         steps.append(("docs-facts --check", rc, text))
     else:
         steps.append(("docs-facts --check", 0, "docs_facts.py is not in this copy of the tools: not run"))

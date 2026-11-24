@@ -16,8 +16,6 @@ They are built for speed: sacdfs decodes stereo and multichannel DST-compressed 
 real time even on a 2011 dual-core 32-bit Atom D2700 NAS, and the conversion libraries run
 many times faster than real time on any recent desktop CPU.
 
-## Projects
-
 |  | Project | What | Latest |
 |---|---|---|---|
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/sacdfs/main/docs/assets/icon-64.png" alt="" width="32"> | [sacdfs](https://github.com/dsd-toolbox/sacdfs) | Plays SACD images as DSF and WAV tracks in any player, without extracting them (Linux, NAS, Windows, macOS) | <!-- facts:release repo=dsd-toolbox/sacdfs fmt="[{version}]({url})" -->[0.7.2](https://github.com/dsd-toolbox/sacdfs/releases/tag/v0.7.2)<!-- /facts --> |
@@ -70,5 +68,8 @@ Which project do you need?
 
 ## Licence and credits
 
-This repository holds documentation only. Each project has its own licence, listed in
+This repository holds documentation only.
+
+Text and data: [CC BY 4.0](LICENSE). Reuse freely with attribution: "DSD Toolbox,
+https://github.com/dsd-toolbox". Code: none here; each project has its own licence, listed in
 [Projects](#projects), and credits its upstreams in its own README.
