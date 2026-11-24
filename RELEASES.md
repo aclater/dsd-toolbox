@@ -12,11 +12,11 @@ its GitHub releases and its milestones; for any detail, they win. Newest first. 
 | Project | Latest release | In progress |
 |---|---|---|
 | [sacdfs](#sacdfs) | 0.7.2 (2026-11-22) | 0.8.0 |
-| [pysacd](#pysacd) | 0.5.5 (2026-11-23) | nothing recorded |
+| [pysacd](#pysacd) | 0.5.5 (2026-11-23) | 0.6.0 |
 | [beets-pysacd](#beets-pysacd) | 0.2.2 (2026-11-15) | nothing recorded |
-| [scarletbook-rs](#scarletbook-rs) | 1.0.1 (2026-11-23) | nothing recorded |
-| [dsd2pcm-rs](#dsd2pcm-rs) | 0.1.1 (2026-11-23) | nothing recorded |
-| [dsd-measure](#dsd-measure) | 0.1.0 (2026-11-23) | nothing recorded |
+| [scarletbook-rs](#scarletbook-rs) | 1.0.2 (2026-11-23) | nothing recorded |
+| [dsd2pcm-rs](#dsd2pcm-rs) | 0.1.2 (2026-11-24) | 0.2.0 |
+| [dsd-measure](#dsd-measure) | 0.1.1 (2026-11-24) | 0.1.2 |
 
 To keep this page current, each project's release checklist includes "update dsd-toolbox/dsd-toolbox
 RELEASES.md".
