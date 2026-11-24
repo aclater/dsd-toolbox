@@ -1,0 +1,70 @@
+# dsd-toolbox's own docs checks: the tool tests, the generated facts regions (RELEASES.md and the
+# Projects table) and the documented commands. Weekly, the facts are regenerated and one docs
+# pull request is opened when a project has released. Other repositories call the reusable
+# docs-facts.yml and docs-run.yml instead (see tools/docs/README.md).
+name: docs
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1"  # weekly: pick up new releases
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  tool-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 -I -m unittest discover -s tools/docs/tests -t tools/docs
+
+  facts:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # the weekly run pushes docs/facts-update
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: ${{ github.event_name == 'schedule' }}
+      - name: Check the regions
+        if: github.event_name != 'schedule'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -I tools/docs/docs_facts.py check
+      - name: Refresh the regions and open a pull request
+        if: github.event_name == 'schedule'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ github.token }}
+          BASE: ${{ github.event.repository.default_branch }}
+        run: |
+          python3 -I tools/docs/docs_facts.py generate
+          sh tools/docs/open-facts-pr.sh
+
+  commands:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run the documented commands
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          rc=0
+          python3 -I tools/docs/docs_run.py run --version-of dsd-toolbox/dsd-measure --json "$RUNNER_TEMP/docs-run.json" | tee "$RUNNER_TEMP/docs-run.txt" || rc=$?
+          { echo '```'; cat "$RUNNER_TEMP/docs-run.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc
