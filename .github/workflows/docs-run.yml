@@ -7,6 +7,12 @@
 #     tools-ref: <the same full commit SHA>
 #     version: 0.1.1                 # replaces {version} in expect=
 #     require-coverage: 60           # percent of command blocks that must run (default 0)
+#     fail_unmarked: true            # default: fail on any command block with no run/skip marker
+#
+# Checkout mode (.docs.toml [run] checkout = true, or checkout=1 on a block) copies `git archive HEAD` of
+# the caller's repository into the container and starts the block there. That runs the repository's own
+# code, in this job on a disposable runner with a read-only token. On a pull request the image and package
+# allowlists are read from the BASE commit's .docs.toml, never from the pull request's own.
 name: docs-run
 
 on:
@@ -31,6 +37,11 @@ on:
         required: false
         default: "0"
         type: string
+      fail_unmarked:
+        description: Fail when any command block is neither marked to run nor skipped with a reason (keeps "100% marked" true)
+        required: false
+        default: true
+        type: boolean
       timeout-minutes:
         required: false
         default: 45
@@ -47,6 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
+          fetch-depth: ${{ github.event_name == 'pull_request' && '0' || '1' }}   # a pull request needs its base commit
           persist-credentials: false
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -62,10 +74,13 @@ jobs:
           VERSION_OF: ${{ inputs.version-of }}
           GITHUB_TOKEN: ${{ github.token }}
           COVERAGE: ${{ inputs.require-coverage }}
+          FAIL_UNMARKED: ${{ inputs.fail_unmarked }}
+          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
         run: |
           set -o pipefail
           rc=0
           python3 -I .docs-tools/tools/docs/docs_run.py run --root . --version "$VERSION" ${VERSION_OF:+--version-of "$VERSION_OF"} \
+            ${BASE_SHA:+--allowlist-ref "$BASE_SHA"} $([ "$FAIL_UNMARKED" = true ] && echo --fail-unmarked) \
             --require-coverage "$COVERAGE" --json "$RUNNER_TEMP/docs-run.json" | tee "$RUNNER_TEMP/docs-run.txt" || rc=$?
           { echo '```'; cat "$RUNNER_TEMP/docs-run.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           exit $rc

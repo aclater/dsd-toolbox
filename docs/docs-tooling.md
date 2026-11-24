@@ -60,6 +60,7 @@ All keys in `.docs.toml` are optional.
 | `[lint] citation`, `notice`, `docs_licence` | Require `CITATION.cff`, require `NOTICE` for Apache-2.0 code, and the documentation licence the README must name | `true`, `true`, `CC BY 4.0` |
 | `[readme] badges`, `title`, `sections`, `allow_extra`, `pitch_max` | Override the badge set derived from the workflows and manifests, the title, the section list, extra sections allowed, and the pitch length | derived |
 | `[links] exclude`, `exclude_files`, `[[links.allow]]` | URL patterns and files not checked, and URLs not fetched because the site blocks scripts (with a reason) | the shared list in `tools/docs/links-allow.toml` |
+| `[run] checkout`, `packages`, `[run.images.<alias>]` | Checkout mode for every docs-run block, the package names a block may install, and extra digest-pinned images (see [tools/docs](../tools/docs/README.md)) | `false`, none, the built-in image |
 | `[touched] code`, `docs`, `ignore` | Path globs: a change to `code` needs a change to `docs`; `ignore` never counts as code | source folders, README, `docs/` |
 | `[audit] help_command`, `history` | A command whose output lists the options the docs may name; files that keep history (version mentions there are not flagged) | none |
 
@@ -67,6 +68,7 @@ The clean-side repositories do not fetch these tools; they get the same rules as
 
 ## Run them locally
 
+<!-- docs-run: skip="runs the tools from a checkout of this repository" -->
 ```sh
 python3 -I tools/docs/docs_lint.py
 python3 -I tools/docs/docs_links.py

@@ -90,6 +90,6 @@ jobs:
         run: |
           set -o pipefail
           rc=0
-          python3 -I tools/docs/docs_run.py run --version-of dsd-toolbox/dsd-measure --json "$RUNNER_TEMP/docs-run.json" | tee "$RUNNER_TEMP/docs-run.txt" || rc=$?
+          python3 -I tools/docs/docs_run.py run --fail-unmarked --version-of dsd-toolbox/dsd-measure --json "$RUNNER_TEMP/docs-run.json" | tee "$RUNNER_TEMP/docs-run.txt" || rc=$?
           { echo '```'; cat "$RUNNER_TEMP/docs-run.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
           exit $rc

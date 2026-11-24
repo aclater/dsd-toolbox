@@ -154,8 +154,25 @@ TERMS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bGithub\b"), "GitHub"),
     (re.compile(_T + r"(linux)" + _E), "Linux"),
 ]
+# d/m/y or m/d/y: a slash list of numbers ("16/24/32-bit", "44.1/48/96 kHz") is not a date. A date has a
+# day (1-31) and a month (1-12) in either order, a 2- or 4-digit year, no digit, dot or slash glued on, and
+# no unit after it.
+SLASH_DATE_RE = re.compile(r"(?<![\d./-])(\d{1,2})/(\d{1,2})/(\d{4}|\d{2})(?![\d/]|\.\d)")
+UNIT_AFTER_RE = re.compile(r"\s?[-\u2010-\u2013]?\s?(?:bits?|[kMG]?Hz|ch|channels?|kbps|Mbps|MB|GB|KB|[kMG]?B/s|x|[kK])\b", re.I)
+
+
+def slash_date(s: str) -> bool:
+    for m in SLASH_DATE_RE.finditer(s):
+        a, b = int(m[1]), int(m[2])
+        if not ((1 <= a <= 31 and 1 <= b <= 12) or (1 <= a <= 12 and 1 <= b <= 31)):
+            continue
+        if UNIT_AFTER_RE.match(s, m.end()):
+            continue
+        return True
+    return False
+
+
 DATE_PATTERNS = [
-    (re.compile(r"\b\d{1,2}/\d{1,2}/\d{2,4}\b"), "dates are YYYY-MM-DD"),
     (re.compile(rf"\b(?:{_MONTHS})\s+\d{{1,2}}(?:st|nd|rd|th)?,?\s+\d{{4}}\b"), "dates are YYYY-MM-DD"),
     (re.compile(rf"\b\d{{1,2}}(?:st|nd|rd|th)?\s+(?:{_MONTHS})\s+\d{{4}}\b"), "dates are YYYY-MM-DD"),
 ]
@@ -291,6 +308,8 @@ def text_rules(f: File, allow: set[str]) -> None:
                 if grp.lower() in allow:
                     continue
                 f.add("terminology", ln.no, f"'{m[0].strip()}': write {want}")
+        if slash_date(s):
+            f.add("date-format", ln.no, "dates are YYYY-MM-DD")
         for rx, msg in DATE_PATTERNS:
             if rx.search(s):
                 f.add("date-format", ln.no, msg)
@@ -748,13 +767,13 @@ def main(argv: list[str] | None = None) -> int:
     findings += index_rules(cfg, pages)
     for pat in lc.get("required_files", ["README.md", "CHANGELOG.md", "CONTRIBUTING.md", "SECURITY.md", "LICENSE*", "docs/README.md"]):
         pats = ["LICENSE*", "LICENCE*", "COPYING*"] if pat == "LICENSE*" else [pat]
-        ok = any((root / q).exists() if "*" not in q else any(root.glob(q)) for q in pats)
+        ok = any((root / q).exists() if "*" not in q else any(g.is_file() for g in root.glob(q)) for q in pats)
         if not ok:
             findings.append(dl.Finding(pat, 1, "required-file", f"{pat} does not exist"))
     if lc.get("citation", True) and not (root / "CITATION.cff").exists():
         findings.append(dl.Finding("CITATION.cff", 1, "required-file", "CITATION.cff does not exist"))
     if lc.get("notice", True) and not any(root.glob("NOTICE*")):
-        lic_text = " ".join(read_text_file(root, str(q.relative_to(root))) for g in ("LICENSE*", "LICENCE*", "COPYING*") for q in root.glob(g))
+        lic_text = " ".join(read_text_file(root, str(q.relative_to(root))) for g in ("LICENSE*", "LICENCE*", "COPYING*") for q in root.glob(g) if q.is_file())
         spdx = derive_spdx(root) or ""
         if "apache" in spdx.lower() or re.search(r"Apache License,? Version 2\.0", lic_text):
             findings.append(dl.Finding("NOTICE", 1, "required-file", "NOTICE does not exist (required for Apache-2.0 and MIT OR Apache-2.0 code)"))

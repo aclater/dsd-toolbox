@@ -18,3 +18,7 @@ history = ["DECISIONS.md", "RELEASES.md"]
 [touched]
 # No code here: a change to a table of facts is a docs change by definition.
 code = []
+
+[run]
+# docs-run: package names a block may install with packages= (every other name is refused)
+packages = ["sudo", "gcc", "git", "python3-pip", "pipx"]

@@ -24,6 +24,7 @@ See tools/docs/README.md for every key.
 from __future__ import annotations
 
 import argparse
+import datetime
 import difflib
 import json
 import os
@@ -56,6 +57,10 @@ SHELL_RE = re.compile(
     r"^([ \t]*)# facts:([a-z][a-z0-9-]*)((?:[ \t][^\n]*)?)\n(.*?)^[ \t]*# /facts[ \t]*$",
     re.S | re.M,
 )
+# A region that follows the latest release goes stale the moment a tag ships. Check mode warns for this many
+# days after the newest release it reads, then fails; the weekly docs-facts-generate run clears it.
+GRACE_DAYS = 7
+GRACE_KEYS = {"release", "latest-date", "install"}
 SKIP_DIRS = {".git", ".docs-tools", "node_modules", "target", ".venv", "venv"}
 
 
@@ -77,6 +82,7 @@ class Source:
         self.snapshot = snapshot
         self.token = token
         self.record: dict[str, object] = {}
+        self.dates: list[str] = []   # release dates read since the last reset (for the grace period)
 
     def get(self, url: str):
         if url in self.record:   # one request per URL per run
@@ -149,6 +155,12 @@ class Source:
                 "assets": [{"name": f["filename"], "size": f["size"]} for f in files]}
 
     def release(self, a: dict) -> dict | None:
+        rel = self._release(a)
+        if rel and rel.get("date"):
+            self.dates.append(rel["date"])
+        return rel
+
+    def _release(self, a: dict) -> dict | None:
         src = a.get("source", "github")
         if src == "github":
             return self.github_release(need(a, "repo"), a.get("tag", "latest"))
@@ -355,6 +367,9 @@ class Ctx:
     def __init__(self, root: Path, src: Source):
         self.root, self.src = root, src
         self.dry = False
+        self.today = datetime.date.today()
+        self.soft: list[str] = []   # stale regions inside the grace period (warnings)
+        self.hard = 0               # stale regions that fail the check
 
 
 # --------------------------------------------------------------------------- regions
@@ -363,6 +378,7 @@ class Ctx:
 def evaluate(key: str, argtext: str, ctx: Ctx) -> str:
     if key not in EVALUATORS:
         raise FactError(f"unknown fact {key!r} (known: {', '.join(sorted(EVALUATORS))})")
+    ctx.src.dates = []
     return EVALUATORS[key](parse_args(argtext), ctx)
 
 
@@ -383,6 +399,24 @@ def process(text: str, ctx: Ctx, name: str, errors: list[str]) -> tuple[str, int
     def lineno(pos: int) -> int:
         return text.count("\n", 0, pos) + 1
 
+    def tag_pinned(argtext: str) -> bool:
+        return bool(re.search(r"(?:^|\s)tag=", argtext))
+
+    def note_change(changed: bool, key: str, line: int, pinned: bool) -> None:
+        """Count a stale region as a warning (inside the grace period after a release) or an error."""
+        if not changed:
+            return
+        newest = max(ctx.src.dates, default="")
+        try:
+            age = (ctx.today - datetime.date.fromisoformat(newest)).days if newest else None
+        except ValueError:
+            age = None
+        if key in GRACE_KEYS and not pinned and age is not None and age <= GRACE_DAYS:
+            ctx.soft.append(f"{name}:{line}: facts:{key} is stale: the newest release is {age} day(s) old; "
+                            f"this fails {GRACE_DAYS} days after it unless docs-facts-generate has landed")
+        else:
+            ctx.hard += 1
+
     def html(m: re.Match) -> str:
         nonlocal count
         if in_example(m.start()):
@@ -399,7 +433,9 @@ def process(text: str, ctx: Ctx, name: str, errors: list[str]) -> tuple[str, int
         if body.startswith("\n") and body.endswith("\n"):
             out = "\n" + out + "\n"
         head = m.group(0)[: m.start(3) - m.start(0)]
-        return f"{head}{out}<!-- /facts -->"
+        res = f"{head}{out}<!-- /facts -->"
+        note_change(res != m.group(0), key, lineno(m.start()), tag_pinned(argtext))
+        return res
 
     def shell(m: re.Match) -> str:
         nonlocal count
@@ -415,7 +451,9 @@ def process(text: str, ctx: Ctx, name: str, errors: list[str]) -> tuple[str, int
             errors.append(f"{name}:{lineno(m.start())}: facts:{key}: {e}")
             return m.group(0)
         body = "".join(f"{indent}{l}\n" for l in out.split("\n"))
-        return f"{indent}# facts:{key}{argtext}\n{body}{indent}# /facts"
+        res = f"{indent}# facts:{key}{argtext}\n{body}{indent}# /facts"
+        note_change(res != m.group(0), key, lineno(m.start()), tag_pinned(argtext))
+        return res
 
     new = HTML_RE.sub(html, text)
     examples[:] = [m.span() for m in EXAMPLE_FENCE_RE.finditer(new)]   # offsets moved if a region changed size
@@ -433,8 +471,11 @@ def iter_files(root: Path, files: list[str]) -> list[Path]:
     return out
 
 
-def run(mode: str, root: Path, files: list[str], src: Source, out=sys.stdout) -> int:
+def run(mode: str, root: Path, files: list[str], src: Source, out=sys.stdout,
+        today: datetime.date | None = None) -> int:
     ctx = Ctx(root, src)
+    if today:
+        ctx.today = today
     ctx.dry = mode == "list"   # count regions without evaluating them
     errors: list[str] = []
     stale = 0
@@ -444,6 +485,7 @@ def run(mode: str, root: Path, files: list[str], src: Source, out=sys.stdout) ->
         if "facts:" not in text:
             continue
         rel = str(p.relative_to(root)) if p.is_relative_to(root) else str(p)
+        hard0 = ctx.hard
         new, n = process(text, ctx, rel, errors)
         total += n
         if mode == "list":
@@ -453,14 +495,18 @@ def run(mode: str, root: Path, files: list[str], src: Source, out=sys.stdout) ->
                 p.write_text(new)
                 print(f"updated {rel}", file=out)
             else:
-                stale += 1
+                if ctx.hard > hard0:
+                    stale += 1
                 diff = difflib.unified_diff(text.splitlines(), new.splitlines(), f"{rel} (committed)",
                                             f"{rel} (from the sources)", lineterm="", n=0)
                 print("\n".join(diff), file=out)
     for e in errors:
         print(f"ERROR {e}", file=sys.stderr)
     if mode == "check":
-        print(f"docs-facts: {total} region(s), {stale} file(s) stale, {len(errors)} error(s)", file=out)
+        for w in ctx.soft:
+            print(f"WARNING {w}", file=sys.stderr)
+        print(f"docs-facts: {total} region(s), {stale} file(s) stale, {len(errors)} error(s), "
+              f"{len(ctx.soft)} warning(s)", file=out)
     elif mode == "generate":
         print(f"docs-facts: {total} region(s) generated, {len(errors)} error(s)", file=out)
     if errors:
@@ -474,12 +520,14 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("files", nargs="*", help="Markdown files (default: every .md under --root)")
     ap.add_argument("--root", default=".", help="repository root (default: .)")
     ap.add_argument("--data", help="JSON snapshot answering every web request (offline mode)")
+    ap.add_argument("--today", help="YYYY-MM-DD, for the grace period (default: today; for tests)")
     ap.add_argument("--dump-data", help="write the web answers used to this JSON file")
     a = ap.parse_args(argv)
     snap = json.loads(Path(a.data).read_text()) if a.data else None
     src = Source(snap, os.environ.get("GITHUB_TOKEN"))
     try:
-        rc = run(a.mode, Path(a.root).resolve(), a.files, src)
+        rc = run(a.mode, Path(a.root).resolve(), a.files, src,
+                 today=datetime.date.fromisoformat(a.today) if a.today else None)
     finally:
         if a.dump_data:
             Path(a.dump_data).write_text(json.dumps(src.record, indent=1, sort_keys=True))
