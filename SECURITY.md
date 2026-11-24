@@ -12,16 +12,16 @@ Please don't open a public issue, pull request or discussion for a vulnerability
 
 | Project | Report privately | Policy |
 |---|---|---|
-| sacdfs | [new advisory](https://github.com/aclater/sacdfs/security/advisories/new) | [SECURITY.md](https://github.com/aclater/sacdfs/blob/main/SECURITY.md) |
-| pysacd | [new advisory](https://github.com/aclater/pysacd/security/advisories/new) | [SECURITY.md](https://github.com/aclater/pysacd/blob/master/SECURITY.md), [threat model](https://github.com/aclater/pysacd/blob/master/docs/security.md) |
-| beets-pysacd | [new advisory](https://github.com/aclater/beets-pysacd/security/advisories/new) | [SECURITY.md](https://github.com/aclater/beets-pysacd/blob/main/SECURITY.md) |
+| sacdfs | [new advisory](https://github.com/dsd-toolbox/sacdfs/security/advisories/new) | [SECURITY.md](https://github.com/dsd-toolbox/sacdfs/blob/main/SECURITY.md) |
+| pysacd | [new advisory](https://github.com/dsd-toolbox/pysacd/security/advisories/new) | [SECURITY.md](https://github.com/dsd-toolbox/pysacd/blob/master/SECURITY.md), [threat model](https://github.com/dsd-toolbox/pysacd/blob/master/docs/security.md) |
+| beets-pysacd | [new advisory](https://github.com/dsd-toolbox/beets-pysacd/security/advisories/new) | [SECURITY.md](https://github.com/dsd-toolbox/beets-pysacd/blob/main/SECURITY.md) |
 | scarletbook-rs | [new advisory](https://github.com/aclater/scarletbook-rs/security/advisories/new) | [SECURITY.md](https://github.com/aclater/scarletbook-rs/blob/main/SECURITY.md) |
-| dsd2pcm-rs | [new advisory in this repository](https://github.com/aclater/dsd-toolbox/security/advisories/new) | this page |
+| dsd2pcm-rs | [new advisory in this repository](https://github.com/dsd-toolbox/dsd-toolbox/security/advisories/new) | this page |
 | sacd-spec | [new advisory](https://github.com/aclater/sacd-spec/security/advisories/new) | [SECURITY.md](https://github.com/aclater/sacd-spec/blob/main/SECURITY.md) |
 
 If you don't know which project it is in, report it to the tool you were running; it will be
 moved if it belongs elsewhere. Private reporting is also on for
-[this repository](https://github.com/aclater/dsd-toolbox/security/advisories/new), for a problem that
+[this repository](https://github.com/dsd-toolbox/dsd-toolbox/security/advisories/new), for a problem that
 spans projects.
 
 If you aren't sure whether a problem is a security problem, report it privately anyway: a

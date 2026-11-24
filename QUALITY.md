@@ -12,7 +12,7 @@ Careless code does not ship. Every release has a written test plan that is run e
 byte-identity and golden checks against the previous release and against reference output,
 fuzzing, sanitizers and leak soaks, and corpora of real files. Every Quick start and every
 command in the documentation is run on the release it describes. Audio measurements can be
-reproduced with [dsd-measure](https://github.com/aclater/dsd-measure), whose own accuracy is
+reproduced with [dsd-measure](https://github.com/dsd-toolbox/dsd-measure), whose own accuracy is
 documented. An independent security review can stop a release. Known limits are written down,
 not hidden.
 
@@ -22,12 +22,12 @@ not hidden.
 
 | Project | Release test plan | CI checks | Fuzzing | Performance | Audio quality | Security |
 |---|---|---|---|---|---|---|
-| [sacdfs](https://github.com/aclater/sacdfs) | [test plan](https://github.com/aclater/sacdfs/blob/main/docs/test-plan.md) | [ci.yml](https://github.com/aclater/sacdfs/blob/main/.github/workflows/ci.yml) | yes: [fuzz/README.md](https://github.com/aclater/sacdfs/blob/main/fuzz/README.md) | [performance](https://github.com/aclater/sacdfs/blob/main/docs/performance.md) | [PCM quality](https://github.com/aclater/sacdfs/blob/main/docs/pcm-quality.md) | [SECURITY.md](https://github.com/aclater/sacdfs/blob/main/SECURITY.md) |
-| [pysacd](https://github.com/aclater/pysacd) | being added | [ci.yml](https://github.com/aclater/pysacd/blob/master/.github/workflows/ci.yml), [development](https://github.com/aclater/pysacd/blob/master/docs/development.md) | yes: [fuzz.yml](https://github.com/aclater/pysacd/blob/master/.github/workflows/fuzz.yml) | [performance](https://github.com/aclater/pysacd/blob/master/docs/performance.md) | – | [SECURITY.md](https://github.com/aclater/pysacd/blob/master/SECURITY.md) |
-| [beets‑pysacd](https://github.com/aclater/beets-pysacd) | being added | [ci.yml](https://github.com/aclater/beets-pysacd/blob/main/.github/workflows/ci.yml) | yes: [fuzz.yml](https://github.com/aclater/beets-pysacd/blob/main/.github/workflows/fuzz.yml) | – | – | [SECURITY.md](https://github.com/aclater/beets-pysacd/blob/main/SECURITY.md) |
+| [sacdfs](https://github.com/dsd-toolbox/sacdfs) | [test plan](https://github.com/dsd-toolbox/sacdfs/blob/main/docs/test-plan.md) | [ci.yml](https://github.com/dsd-toolbox/sacdfs/blob/main/.github/workflows/ci.yml) | yes: [fuzz/README.md](https://github.com/dsd-toolbox/sacdfs/blob/main/fuzz/README.md) | [performance](https://github.com/dsd-toolbox/sacdfs/blob/main/docs/performance.md) | [PCM quality](https://github.com/dsd-toolbox/sacdfs/blob/main/docs/pcm-quality.md) | [SECURITY.md](https://github.com/dsd-toolbox/sacdfs/blob/main/SECURITY.md) |
+| [pysacd](https://github.com/dsd-toolbox/pysacd) | being added | [ci.yml](https://github.com/dsd-toolbox/pysacd/blob/master/.github/workflows/ci.yml), [development](https://github.com/dsd-toolbox/pysacd/blob/master/docs/development.md) | yes: [fuzz.yml](https://github.com/dsd-toolbox/pysacd/blob/master/.github/workflows/fuzz.yml) | [performance](https://github.com/dsd-toolbox/pysacd/blob/master/docs/performance.md) | – | [SECURITY.md](https://github.com/dsd-toolbox/pysacd/blob/master/SECURITY.md) |
+| [beets‑pysacd](https://github.com/dsd-toolbox/beets-pysacd) | being added | [ci.yml](https://github.com/dsd-toolbox/beets-pysacd/blob/main/.github/workflows/ci.yml) | yes: [fuzz.yml](https://github.com/dsd-toolbox/beets-pysacd/blob/main/.github/workflows/fuzz.yml) | – | – | [SECURITY.md](https://github.com/dsd-toolbox/beets-pysacd/blob/main/SECURITY.md) |
 | [scarletbook‑rs](https://github.com/aclater/scarletbook-rs) | being added | [ci.yml](https://github.com/aclater/scarletbook-rs/blob/main/.github/workflows/ci.yml) | yes: [fuzz/README.md](https://github.com/aclater/scarletbook-rs/blob/main/fuzz/README.md) | [performance](https://github.com/aclater/scarletbook-rs/blob/main/docs/performance.md) | – | [SECURITY.md](https://github.com/aclater/scarletbook-rs/blob/main/SECURITY.md) |
 | [dsd2pcm‑rs](https://github.com/aclater/dsd2pcm-rs) | being added; [testing](https://github.com/aclater/dsd2pcm-rs/blob/main/docs/testing.md) covers soaks, leaks, Miri and TSan | [ci.yml](https://github.com/aclater/dsd2pcm-rs/blob/main/.github/workflows/ci.yml) | yes: [fuzzing](https://github.com/aclater/dsd2pcm-rs/blob/main/docs/fuzzing.md) | [performance](https://github.com/aclater/dsd2pcm-rs/blob/main/docs/performance.md) | being added | [SECURITY.md](https://github.com/aclater/dsd2pcm-rs/blob/main/SECURITY.md) |
-| [dsd‑measure](https://github.com/aclater/dsd-measure) | being added | being added | no | – | [footprint](https://github.com/aclater/dsd-measure/blob/main/docs/footprint.md), [examples](https://github.com/aclater/dsd-measure/blob/main/examples/README.md) | [SECURITY.md](https://github.com/aclater/dsd-measure/blob/main/SECURITY.md) |
+| [dsd‑measure](https://github.com/dsd-toolbox/dsd-measure) | being added | being added | no | – | [footprint](https://github.com/dsd-toolbox/dsd-measure/blob/main/docs/footprint.md), [examples](https://github.com/dsd-toolbox/dsd-measure/blob/main/examples/README.md) | [SECURITY.md](https://github.com/dsd-toolbox/dsd-measure/blob/main/SECURITY.md) |
 | [sacd‑spec](https://github.com/aclater/sacd-spec) | – (no code; [corpus](https://github.com/aclater/sacd-spec/blob/main/corpus/README.md)) | [docs-links.yml](https://github.com/aclater/sacd-spec/blob/main/.github/workflows/docs-links.yml) | – | – | – | [SECURITY.md](https://github.com/aclater/sacd-spec/blob/main/SECURITY.md) |
 
 dsd-measure follows the published practice of
@@ -55,7 +55,7 @@ measurement floor next to every result, so a good device is not hidden by the to
 
    ```sh
    sudo dnf install -y gcc git python3-pip pipx
-   pipx install git+https://github.com/aclater/dsd-measure
+   pipx install git+https://github.com/dsd-toolbox/dsd-measure
    dsd-measure init
    dsd-measure run suite.toml
    ```
@@ -76,12 +76,12 @@ measurement floor next to every result, so a good device is not hidden by the to
 
 Each project says what it does not do and how it behaves at the edges:
 
-- [sacdfs limits](https://github.com/aclater/sacdfs/blob/main/docs/limits.md) and
-  [PCM quality](https://github.com/aclater/sacdfs/blob/main/docs/pcm-quality.md)
-- [pysacd security and hostile images](https://github.com/aclater/pysacd/blob/master/docs/security.md)
+- [sacdfs limits](https://github.com/dsd-toolbox/sacdfs/blob/main/docs/limits.md) and
+  [PCM quality](https://github.com/dsd-toolbox/sacdfs/blob/main/docs/pcm-quality.md)
+- [pysacd security and hostile images](https://github.com/dsd-toolbox/pysacd/blob/master/docs/security.md)
 - [scarletbook-rs stability](https://github.com/aclater/scarletbook-rs/blob/main/docs/stability.md)
 - [dsd2pcm-rs robustness](https://github.com/aclater/dsd2pcm-rs/blob/main/docs/design.md#robustness)
-- [dsd-measure reference floor](https://github.com/aclater/dsd-measure/blob/main/docs/footprint.md#the-reference-floor)
+- [dsd-measure reference floor](https://github.com/dsd-toolbox/dsd-measure/blob/main/docs/footprint.md#the-reference-floor)
 - [sacd-spec validation and limits](https://github.com/aclater/sacd-spec/blob/main/spec/07-validation-and-limits.md)
 
 ## See also
