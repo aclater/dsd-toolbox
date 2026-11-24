@@ -4,7 +4,7 @@
 
 [![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/dsd-toolbox/dsd-toolbox/badge)](https://scorecard.dev/viewer/?uri=github.com/dsd-toolbox/dsd-toolbox)
 
-> scarletbook-rs contributors: please don't read this repository ([why](docs/clean-room.md#for-scarletbook-rs-contributors)).
+> Contributing to sacd-spec or scarletbook-rs (the clean room)? Please work from sacd-spec only and don't read this repository: [how the clean room works](https://github.com/aclater/scarletbook-rs/blob/main/CLEANROOM.md).
 
 Open tools for reading Super Audio CD disc images and DSD audio: a specification written from
 scratch, a Rust library built from it, and the tools that use it. This
@@ -22,8 +22,15 @@ many times faster than real time on any recent desktop CPU.
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/pysacd/master/docs/assets/icon-64.png" alt="" width="32"> | [pysacd](https://github.com/dsd-toolbox/pysacd) | Extracts and converts SACD images to DSF, DSDIFF, FLAC or WAV, from the command line or Python | <!-- facts:release repo=dsd-toolbox/pysacd fmt="[{version}]({url})" -->[0.5.5](https://github.com/dsd-toolbox/pysacd/releases/tag/v0.5.5)<!-- /facts --> |
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/beets-pysacd/main/docs/assets/icon-64.png" alt="" width="32"> | [beets‑pysacd](https://github.com/dsd-toolbox/beets-pysacd) | Imports SACD images into a beets music library, with MusicBrainz matching | <!-- facts:release repo=dsd-toolbox/beets-pysacd fmt="[{version}]({url})" -->[0.2.2](https://github.com/dsd-toolbox/beets-pysacd/releases/tag/v0.2.2)<!-- /facts --> |
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-measure/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd‑measure](https://github.com/dsd-toolbox/dsd-measure) | Measures DSD and PCM converters the way audiophile reviewers do, and writes one readable report | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="[{version}]({url})" -->[0.1.1](https://github.com/dsd-toolbox/dsd-measure/releases/tag/v0.1.1)<!-- /facts --> |
-| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-toolbox/main/docs/assets/projects/scarletbook-rs-64.png" alt="" width="32"> | [scarletbook‑rs](https://github.com/aclater/scarletbook-rs) | Rust and C library that reads SACD images and decodes DST | <!-- facts:release repo=aclater/scarletbook-rs fmt="[{version}]({url})" -->[1.0.2](https://github.com/aclater/scarletbook-rs/releases/tag/v1.0.2)<!-- /facts --> |
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd2pcm-rs/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd2pcm‑rs](https://github.com/dsd-toolbox/dsd2pcm-rs) | Rust and C library and CLI: DSD to PCM, and DSF, DFF and WAV files | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="[{version}]({url})" -->[0.1.2](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.1.2)<!-- /facts --> |
+
+### Clean room
+
+sacd-spec and scarletbook-rs are DSD Toolbox projects inside the clean-room wall; their contributors read only sacd-spec.
+
+|---|---|---|---|
+| <img src="https://raw.githubusercontent.com/dsd-toolbox/sacdfs/main/docs/assets/icon-64.png" alt="" width="32"> | [sacdfs](https://github.com/dsd-toolbox/sacdfs) | Plays SACD images as DSF and WAV tracks in any player, without extracting them (Linux, NAS, Windows, macOS) | <!-- facts:release repo=dsd-toolbox/sacdfs fmt="[{version}]({url})" -->[0.7.2](https://github.com/dsd-toolbox/sacdfs/releases/tag/v0.7.2)<!-- /facts --> |
+| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-toolbox/main/docs/assets/projects/scarletbook-rs-64.png" alt="" width="32"> | [scarletbook‑rs](https://github.com/aclater/scarletbook-rs) | Rust and C library that reads SACD images and decodes DST | <!-- facts:release repo=aclater/scarletbook-rs fmt="[{version}]({url})" -->[1.0.2](https://github.com/aclater/scarletbook-rs/releases/tag/v1.0.2)<!-- /facts --> |
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-toolbox/main/docs/assets/projects/sacd-spec-64.png" alt="" width="32"> | [sacd‑spec](https://github.com/aclater/sacd-spec) | Specification of the SACD disc format, with a test corpus | <!-- facts:release repo=aclater/sacd-spec fmt="[{version}]({url})" empty="none: cite the commit" -->none: cite the commit<!-- /facts --> |
 
 

@@ -32,9 +32,10 @@ when DSD-to-PCM conversion moved out of scarletbook-rs into dsd2pcm-rs
 - scarletbook-rs takes no code from dsd2pcm-rs or the applications.
 - This repository is a description, not an input to the clean side.
 
-## For scarletbook-rs contributors
+## For clean-room contributors
 
-This repository is outside the clean room. scarletbook-rs contributors must not read it or
+sacd-spec and scarletbook-rs are DSD Toolbox projects inside the wall; contributors to them read only sacd-spec.
+This repository is outside the clean room. Clean-room contributors must not read it or
 follow its links; the clean side gets requirements only through scarletbook-rs issues. An
 owner-directed read on 2026-11-01 is recorded in scarletbook-rs#155.
 
