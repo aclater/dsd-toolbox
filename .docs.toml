@@ -1,0 +1,20 @@
+# Settings for the docs tools (tools/docs, docs/docs-tooling.md).
+name = "dsd-toolbox"
+display_name = "DSD Toolbox"
+kind = "overview"          # the map repository: a Projects table instead of Platforms
+default_branch = "main"
+footer = false             # this repository is the toolbox; the "Part of the DSD Toolbox" line is for its projects
+
+[lint]
+# Docs only: RELEASES.md stands in for CHANGELOG.md. The documentation is CC BY 4.0 (LICENSE).
+required_files = ["README.md", "CONTRIBUTING.md", "SECURITY.md", "LICENSE*", "docs/README.md"]
+release_files = ["docs/ci-cd.md"]     # the shared release process is described here
+allow_words = ["center"]              # "Media Center" is a product name
+proper_nouns = ["Decisions", "Quality"]
+
+[audit]
+history = ["DECISIONS.md", "RELEASES.md"]
+
+[touched]
+# No code here: a change to a table of facts is a docs change by definition.
+code = []

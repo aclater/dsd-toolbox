@@ -1,0 +1,95 @@
+# The docs checks on this repository: the tool tests, the reusable workflows run against the working
+# tree, the generated facts regions (RELEASES.md and the Projects table) and the documented commands.
+# Pull requests and pushes check shape and links offline; the weekly run also fetches every external
+# URL and regenerates the facts into the branch docs/facts-update (a person opens its pull request). Other
+# repositories call the reusable docs-*.yml workflows instead (see tools/docs/README.md).
+
+name: docs
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "17 6 * * 1"  # weekly: external links rot and projects release without a change here
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}  # a new push supersedes the old PR run; main runs finish
+
+permissions:
+  contents: read
+
+jobs:
+  tools-test:
+    name: docs tools tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - run: python3 -I -m unittest discover -s tools/docs/tests
+
+  lint:
+    uses: ./.github/workflows/docs-lint.yml
+
+  links:
+    uses: ./.github/workflows/docs-links.yml
+    with:
+      external: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+
+  touched:
+    if: github.event_name == 'pull_request'
+    uses: ./.github/workflows/docs-touched.yml
+
+  facts:
+    name: facts check
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Check the regions
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -I tools/docs/docs_facts.py check
+
+  # The only job with a write token: schedule or manual run on the default branch, never a pull request.
+  # It pushes the branch docs/facts-update and fails, naming it; a person opens the pull request.
+  facts-refresh:
+    name: facts refresh
+    if: (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: true   # for the push; the generator is this checkout's own tool
+      - name: Generate the regions
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -I tools/docs/docs_facts.py generate
+      - name: Push the branch
+        env:
+          BASE: ${{ github.event.repository.default_branch }}
+        run: sh tools/docs/push-facts-branch.sh
+
+  commands:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Run the documented commands
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          rc=0
+          python3 -I tools/docs/docs_run.py run --version-of dsd-toolbox/dsd-measure --json "$RUNNER_TEMP/docs-run.json" | tee "$RUNNER_TEMP/docs-run.txt" || rc=$?
+          { echo '```'; cat "$RUNNER_TEMP/docs-run.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc

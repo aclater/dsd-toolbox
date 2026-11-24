@@ -1,0 +1,57 @@
+# Reusable: docs-links (T4). Every link in every Markdown file: relative links, #anchors and
+# links into the repository itself offline; with external: true, every external URL too
+# (sites that refuse scripts are on the allow lists, with a reason each).
+#
+# Adopt it with one job per trigger (pull requests offline, weekly external):
+#
+#   docs-links:
+#     uses: dsd-toolbox/dsd-toolbox/.github/workflows/docs-links.yml@SHA
+#     with:
+#       tools_ref: SHA
+#       external: ${{ github.event_name == 'schedule' }}
+
+name: docs-links
+
+on:
+  workflow_call:
+    inputs:
+      tools_ref:
+        description: "Commit of dsd-toolbox/dsd-toolbox whose tools/docs to run; empty uses the calling repository's own copy"
+        type: string
+        default: ""
+      external:
+        description: "Also fetch every external URL"
+        type: boolean
+        default: false
+      name:
+        description: "Repository name when .docs.toml does not give one"
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  links:
+    name: docs links
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Fetch the docs tools
+        if: inputs.tools_ref != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: dsd-toolbox/dsd-toolbox
+          ref: ${{ inputs.tools_ref }}
+          path: .docs-tools
+          persist-credentials: false
+
+      - name: Check the links
+        env:
+          TOOLS: ${{ inputs.tools_ref != '' && '.docs-tools/tools/docs' || 'tools/docs' }}
+          NAME: ${{ inputs.name }}
+          EXTERNAL: ${{ inputs.external && '--external' || '' }}
+        run: python3 -I "$TOOLS/docs_links.py" . ${NAME:+--name "$NAME"} $EXTERNAL

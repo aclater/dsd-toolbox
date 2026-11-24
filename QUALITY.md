@@ -26,7 +26,7 @@ not hidden.
 | [pysacd](https://github.com/dsd-toolbox/pysacd) | being added | [ci.yml](https://github.com/dsd-toolbox/pysacd/blob/master/.github/workflows/ci.yml), [development](https://github.com/dsd-toolbox/pysacd/blob/master/docs/development.md) | yes: [fuzz.yml](https://github.com/dsd-toolbox/pysacd/blob/master/.github/workflows/fuzz.yml) | [performance](https://github.com/dsd-toolbox/pysacd/blob/master/docs/performance.md) | – | [SECURITY.md](https://github.com/dsd-toolbox/pysacd/blob/master/SECURITY.md) |
 | [beets‑pysacd](https://github.com/dsd-toolbox/beets-pysacd) | being added | [ci.yml](https://github.com/dsd-toolbox/beets-pysacd/blob/main/.github/workflows/ci.yml) | yes: [fuzz.yml](https://github.com/dsd-toolbox/beets-pysacd/blob/main/.github/workflows/fuzz.yml) | – | – | [SECURITY.md](https://github.com/dsd-toolbox/beets-pysacd/blob/main/SECURITY.md) |
 | [scarletbook‑rs](https://github.com/aclater/scarletbook-rs) | being added | [ci.yml](https://github.com/aclater/scarletbook-rs/blob/main/.github/workflows/ci.yml) | yes: [fuzz/README.md](https://github.com/aclater/scarletbook-rs/blob/main/fuzz/README.md) | [performance](https://github.com/aclater/scarletbook-rs/blob/main/docs/performance.md) | – | [SECURITY.md](https://github.com/aclater/scarletbook-rs/blob/main/SECURITY.md) |
-| [dsd2pcm‑rs](https://github.com/aclater/dsd2pcm-rs) | being added; [testing](https://github.com/aclater/dsd2pcm-rs/blob/main/docs/testing.md) covers soaks, leaks, Miri and TSan | [ci.yml](https://github.com/aclater/dsd2pcm-rs/blob/main/.github/workflows/ci.yml) | yes: [fuzzing](https://github.com/aclater/dsd2pcm-rs/blob/main/docs/fuzzing.md) | [performance](https://github.com/aclater/dsd2pcm-rs/blob/main/docs/performance.md) | being added | [SECURITY.md](https://github.com/aclater/dsd2pcm-rs/blob/main/SECURITY.md) |
+| [dsd2pcm‑rs](https://github.com/dsd-toolbox/dsd2pcm-rs) | being added; [testing](https://github.com/dsd-toolbox/dsd2pcm-rs/blob/main/docs/testing.md) covers soaks, leaks, Miri and TSan | [ci.yml](https://github.com/dsd-toolbox/dsd2pcm-rs/blob/main/.github/workflows/ci.yml) | yes: [fuzzing](https://github.com/dsd-toolbox/dsd2pcm-rs/blob/main/docs/fuzzing.md) | [performance](https://github.com/dsd-toolbox/dsd2pcm-rs/blob/main/docs/performance.md) | being added | [SECURITY.md](https://github.com/dsd-toolbox/dsd2pcm-rs/blob/main/SECURITY.md) |
 | [dsd‑measure](https://github.com/dsd-toolbox/dsd-measure) | being added | being added | no | – | [footprint](https://github.com/dsd-toolbox/dsd-measure/blob/main/docs/footprint.md), [examples](https://github.com/dsd-toolbox/dsd-measure/blob/main/examples/README.md) | [SECURITY.md](https://github.com/dsd-toolbox/dsd-measure/blob/main/SECURITY.md) |
 | [sacd‑spec](https://github.com/aclater/sacd-spec) | – (no code; [corpus](https://github.com/aclater/sacd-spec/blob/main/corpus/README.md)) | [docs-links.yml](https://github.com/aclater/sacd-spec/blob/main/.github/workflows/docs-links.yml) | – | – | – | [SECURITY.md](https://github.com/aclater/sacd-spec/blob/main/SECURITY.md) |
 
@@ -42,20 +42,25 @@ measurement floor next to every result, so a good device is not hidden by the to
    attestation. This example is dsd2pcm-rs 0.1.1; `--deny-self-hosted-runners` rejects anything
    not built on a GitHub-hosted runner.
 
+   <!-- docs-run: skip="gh needs a signed-in GitHub token, which docs-run never passes to a container" -->
    ```sh
-   gh release download v0.1.1 -R aclater/dsd2pcm-rs -p 'dsd2pcm-0.1.1-x86_64-linux.tar.gz*'
+   gh release download v0.1.1 -R dsd-toolbox/dsd2pcm-rs -p 'dsd2pcm-0.1.1-x86_64-linux.tar.gz*'
    sha256sum -c dsd2pcm-0.1.1-x86_64-linux.tar.gz.sha256
-   gh attestation verify dsd2pcm-0.1.1-x86_64-linux.tar.gz -R aclater/dsd2pcm-rs \
-     --signer-workflow aclater/dsd2pcm-rs/.github/workflows/release.yml \
+   gh attestation verify dsd2pcm-0.1.1-x86_64-linux.tar.gz -R dsd-toolbox/dsd2pcm-rs \
+     --signer-workflow dsd-toolbox/dsd2pcm-rs/.github/workflows/release.yml \
      --source-ref refs/tags/v0.1.1 --deny-self-hosted-runners
    ```
 
 2. **Reproduce the measurements.** dsd-measure's Quick start measures its reference decoder and
    modulator and writes a report with its own floor shown:
 
+   <!-- docs-run: packages=sudo,gcc,git,python3-pip,pipx expect="^Finished in" expect="dsd-measure {version}" -->
    ```sh
    sudo dnf install -y gcc git python3-pip pipx
-   pipx install git+https://github.com/dsd-toolbox/dsd-measure
+   # facts:install kind=pipx-git repo=dsd-toolbox/dsd-measure
+   pipx install git+https://github.com/dsd-toolbox/dsd-measure@v0.1.1
+   # /facts
+   dsd-measure --version
    dsd-measure init
    dsd-measure run suite.toml
    ```
@@ -63,8 +68,9 @@ measurement floor next to every result, so a good device is not hidden by the to
 3. **Run a project's tests.** For example dsd2pcm-rs, which checks its output against its
    reference filters at every SIMD level:
 
+   <!-- docs-run: skip="builds and tests a whole project; that project's own CI runs it" -->
    ```sh
-   git clone https://github.com/aclater/dsd2pcm-rs
+   git clone https://github.com/dsd-toolbox/dsd2pcm-rs
    cd dsd2pcm-rs
    cargo test --release --workspace
    ```
@@ -80,7 +86,7 @@ Each project says what it does not do and how it behaves at the edges:
   [PCM quality](https://github.com/dsd-toolbox/sacdfs/blob/main/docs/pcm-quality.md)
 - [pysacd security and hostile images](https://github.com/dsd-toolbox/pysacd/blob/master/docs/security.md)
 - [scarletbook-rs stability](https://github.com/aclater/scarletbook-rs/blob/main/docs/stability.md)
-- [dsd2pcm-rs robustness](https://github.com/aclater/dsd2pcm-rs/blob/main/docs/design.md#robustness)
+- [dsd2pcm-rs robustness](https://github.com/dsd-toolbox/dsd2pcm-rs/blob/main/docs/design.md#robustness)
 - [dsd-measure reference floor](https://github.com/dsd-toolbox/dsd-measure/blob/main/docs/footprint.md#the-reference-floor)
 - [sacd-spec validation and limits](https://github.com/aclater/sacd-spec/blob/main/spec/07-validation-and-limits.md)
 

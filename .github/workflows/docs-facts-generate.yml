@@ -1,0 +1,53 @@
+# Reusable: regenerate the marked facts regions and push them to the branch docs/facts-update.
+# Call it from a schedule or workflow_dispatch job ONLY, never from pull_request. It does not
+# open a pull request (the organisation keeps "Actions can create pull requests" off); the run
+# fails with a message naming the branch, and a person opens the pull request.
+#
+#   jobs:
+#     refresh:
+#       permissions:
+#         contents: write
+#       uses: dsd-toolbox/dsd-toolbox/.github/workflows/docs-facts-generate.yml@<full commit SHA>
+#       with:
+#         tools-ref: <the same full commit SHA>
+name: docs-facts-generate
+
+on:
+  workflow_call:
+    inputs:
+      tools-ref:
+        description: Commit SHA of dsd-toolbox/dsd-toolbox that holds tools/docs (use the SHA you pinned this workflow at)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    name: docs-facts generate
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write        # pushes the docs/facts-update branch; nothing else
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: true   # the push below needs it; no step runs repository code
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: dsd-toolbox/dsd-toolbox
+          ref: ${{ inputs.tools-ref }}
+          path: .docs-tools
+          persist-credentials: false
+
+      - name: Generate the regions
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -I .docs-tools/tools/docs/docs_facts.py generate
+
+      - name: Push the branch
+        env:
+          BASE: ${{ github.event.repository.default_branch }}
+        run: sh .docs-tools/tools/docs/push-facts-branch.sh

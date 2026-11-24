@@ -1,0 +1,5 @@
+# zizmor settings. The docs workflows call their reusable workflows with `./`, which every
+# GitHub runner supports; the newer self-repository syntax is not needed.
+rules:
+  self-repository:
+    disable: true

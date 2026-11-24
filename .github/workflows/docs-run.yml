@@ -1,0 +1,71 @@
+# Reusable: run the marked command blocks of README.md and docs/ in a fresh container, against
+# the PUBLISHED release (the container holds only the extracted blocks, never the checkout),
+# and report how many command blocks are covered.
+#
+#   uses: dsd-toolbox/dsd-toolbox/.github/workflows/docs-run.yml@<full commit SHA>
+#   with:
+#     tools-ref: <the same full commit SHA>
+#     version: 0.1.1                 # replaces {version} in expect=
+#     require-coverage: 60           # percent of command blocks that must run (default 0)
+name: docs-run
+
+on:
+  workflow_call:
+    inputs:
+      tools-ref:
+        description: Commit SHA of dsd-toolbox/dsd-toolbox that holds tools/docs (use the SHA you pinned this workflow at)
+        required: true
+        type: string
+      version:
+        description: Release version the docs describe; replaces {version} in expect= markers
+        required: false
+        default: ""
+        type: string
+      version-of:
+        description: OWNER/REPO whose latest release version replaces {version} (instead of version)
+        required: false
+        default: ""
+        type: string
+      require-coverage:
+        description: Fail when fewer than this percentage of command blocks run
+        required: false
+        default: "0"
+        type: string
+      timeout-minutes:
+        required: false
+        default: 45
+        type: number
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: docs-run
+    runs-on: ubuntu-latest
+    timeout-minutes: ${{ inputs.timeout-minutes }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: dsd-toolbox/dsd-toolbox
+          ref: ${{ inputs.tools-ref }}
+          path: .docs-tools
+          persist-credentials: false
+
+      - name: Run the documented commands
+        env:
+          VERSION: ${{ inputs.version }}
+          VERSION_OF: ${{ inputs.version-of }}
+          GITHUB_TOKEN: ${{ github.token }}
+          COVERAGE: ${{ inputs.require-coverage }}
+        run: |
+          set -o pipefail
+          rc=0
+          python3 -I .docs-tools/tools/docs/docs_run.py run --root . --version "$VERSION" ${VERSION_OF:+--version-of "$VERSION_OF"} \
+            --require-coverage "$COVERAGE" --json "$RUNNER_TEMP/docs-run.json" | tee "$RUNNER_TEMP/docs-run.txt" || rc=$?
+          { echo '```'; cat "$RUNNER_TEMP/docs-run.txt"; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          exit $rc

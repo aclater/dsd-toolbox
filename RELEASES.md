@@ -6,17 +6,17 @@ step: it may change behaviour, and a patch release only adds or fixes. From 1.0,
 scarletbook-rs, the usual semantic-versioning rules apply.
 
 This page summarises public release notes only. The sources are each project's `CHANGELOG.md`,
-its GitHub releases and its milestones; for any detail, they win. Newest first. Last updated
-2026-11-23.
+its GitHub releases and its milestones; for any detail, they win. Newest first. The release column of the table is generated from the
+GitHub releases; the newest is dated <!-- facts:latest-date repos=dsd-toolbox/sacdfs,dsd-toolbox/pysacd,dsd-toolbox/beets-pysacd,aclater/scarletbook-rs,dsd-toolbox/dsd2pcm-rs,dsd-toolbox/dsd-measure -->2026-11-24<!-- /facts -->.
 
 | Project | Latest release | In progress |
 |---|---|---|
-| [sacdfs](#sacdfs) | 0.7.2 (2026-11-22) | 0.8.0 |
-| [pysacd](#pysacd) | 0.5.5 (2026-11-23) | 0.6.0 |
-| [beets-pysacd](#beets-pysacd) | 0.2.2 (2026-11-15) | nothing recorded |
-| [scarletbook-rs](#scarletbook-rs) | 1.0.2 (2026-11-23) | nothing recorded |
-| [dsd2pcm-rs](#dsd2pcm-rs) | 0.1.2 (2026-11-24) | 0.2.0 |
-| [dsd-measure](#dsd-measure) | 0.1.1 (2026-11-24) | 0.1.2 |
+| [sacdfs](#sacdfs) | <!-- facts:release repo=dsd-toolbox/sacdfs fmt="{version} ({date})" -->0.7.2 (2026-11-22)<!-- /facts --> | 0.8.0 |
+| [pysacd](#pysacd) | <!-- facts:release repo=dsd-toolbox/pysacd fmt="{version} ({date})" -->0.5.5 (2026-11-23)<!-- /facts --> | 0.6.0 |
+| [beets-pysacd](#beets-pysacd) | <!-- facts:release repo=dsd-toolbox/beets-pysacd fmt="{version} ({date})" -->0.2.2 (2026-11-15)<!-- /facts --> | nothing recorded |
+| [scarletbook-rs](#scarletbook-rs) | <!-- facts:release repo=aclater/scarletbook-rs fmt="{version} ({date})" -->1.0.2 (2026-11-23)<!-- /facts --> | nothing recorded |
+| [dsd2pcm-rs](#dsd2pcm-rs) | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="{version} ({date})" -->0.1.2 (2026-11-24)<!-- /facts --> | 0.2.0 |
+| [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.1 (2026-11-24)<!-- /facts --> | 0.1.2 |
 
 To keep this page current, each project's release checklist includes "update dsd-toolbox/dsd-toolbox
 RELEASES.md".
@@ -667,8 +667,8 @@ and Windows x86_64.
   notarised by Apple; faster one-frame calls; an SSE2 level for 32-bit x86.
 - **0.1.0** (2026-11-23): first release; reproduces scarletbook-pcm 0.7.0's output byte for byte.
 
-Releases: [0.1.0](https://github.com/aclater/dsd2pcm-rs/releases/tag/v0.1.0) (2026-11-23),
-[0.1.1](https://github.com/aclater/dsd2pcm-rs/releases/tag/v0.1.1) (2026-11-23).
+Releases: [0.1.0](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.1.0) (2026-11-23),
+[0.1.1](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.1.1) (2026-11-23).
 
 ## dsd-measure
 

@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this documentation, please cite it as below."
+title: "DSD Toolbox"
+type: dataset
+abstract: "Open tools for reading Super Audio CD disc images and DSD audio, and the documentation that maps how they fit together."
+authors:
+  - name: "DSD Toolbox contributors"
+repository-code: "https://github.com/dsd-toolbox/dsd-toolbox"
+url: "https://github.com/dsd-toolbox"
+license: CC-BY-4.0

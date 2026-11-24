@@ -1,0 +1,43 @@
+# Reusable: check that the marked facts regions in Markdown (release versions and dates, asset and
+# platform lists, CI matrices, minimum versions, install lines) equal their sources. Read-only:
+# callers need only `permissions: contents: read`. Refreshing the regions is the separate
+# docs-facts-generate.yml (write access, schedule or dispatch only).
+#
+#   uses: dsd-toolbox/dsd-toolbox/.github/workflows/docs-facts.yml@<full commit SHA>
+#   with:
+#     tools-ref: <the same full commit SHA>
+#
+# Fails when a region is stale.
+name: docs-facts
+
+on:
+  workflow_call:
+    inputs:
+      tools-ref:
+        description: Commit SHA of dsd-toolbox/dsd-toolbox that holds tools/docs (use the SHA you pinned this workflow at)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  facts:
+    name: docs-facts check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          repository: dsd-toolbox/dsd-toolbox
+          ref: ${{ inputs.tools-ref }}
+          path: .docs-tools
+          persist-credentials: false
+
+      - name: Check the regions
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 -I .docs-tools/tools/docs/docs_facts.py check
