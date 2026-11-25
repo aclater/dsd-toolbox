@@ -36,6 +36,7 @@ already a disposable container (add --run-setup there).
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import os
 import re
@@ -75,6 +76,11 @@ CHECKOUT_DIR = "checkout"   # under the container's $HOME: where a checkout-mode
 MAX_LEN = {"setup": 1000, "expect": 500, "drop": 200, "skip": 300, "packages": 1000}
 # What dnf needs to unpack packages when the root is not read-only (everything else is dropped).
 INSTALL_CAPS = ["CHOWN", "DAC_OVERRIDE", "FOWNER", "FSETID", "SETGID", "SETUID", "SETFCAP", "SYS_CHROOT"]
+# Added to those only under ROOTLESS podman: root reads root-only files such as /etc/shadow (mode 0000
+# on UBI 9). On a GitHub runner (rootless Podman 5.7) DAC_OVERRIDE alone leaves open() of it at EACCES,
+# and `sudo` then fails in its PAM account check ("cannot retrieve authentication info"). Under rootful
+# podman it would let the container use open_by_handle_at on the host's files, so it is not granted there.
+ROOTLESS_INSTALL_CAPS = ["DAC_READ_SEARCH"]
 CONTAINER_HOME = "/docs-run/home"   # on the work folder (host disk), so installs and reports do not fill memory
 FENCE_RE = re.compile(r"^(\s*)(`{3,}|~{3,})\s*([A-Za-z0-9_+-]*)\s*(.*)$")
 DIRECTIVE_RE = re.compile(r"^\s*<!--\s*docs-run:(.*?)-->\s*$")
@@ -420,7 +426,19 @@ def export_checkout(root: Path, dest: Path) -> None:
             raise MarkerError(f"git archive HEAD failed in {root}: {err.strip()[-300:]}")
 
 
-def podman_command(s: dict, work: Path, name: str, run_id: str, args) -> list[str]:
+@functools.lru_cache(maxsize=1)
+def podman_rootless() -> bool:
+    """Whether podman runs rootless here, from `podman info` (host.security.rootless). Anything
+    but a clear "true" counts as not rootless, so the extra capability is not granted on a doubt."""
+    try:
+        out = subprocess.run(["podman", "info", "--format", "{{.Host.Security.Rootless}}"],
+                             capture_output=True, text=True, timeout=60).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return out.strip() == "true"
+
+
+def podman_command(s: dict, work: Path, name: str, run_id: str, args, rootless: bool = False) -> list[str]:
     """The whole podman command line. Nothing from Markdown is an option: the image is an allowlisted,
     digest-pinned reference, every fixed option comes first, and `--` ends the options."""
     installs = bool(s["setup"] or s["packages"])
@@ -432,7 +450,7 @@ def podman_command(s: dict, work: Path, name: str, run_id: str, args) -> list[st
            "-e", f"HOME={CONTAINER_HOME}", "-w", CONTAINER_HOME,
            "-v", f"{work}:/docs-run:Z"]
     if installs:   # dnf writes to the root and needs a few capabilities to unpack packages
-        cmd += [f"--cap-add={c}" for c in INSTALL_CAPS]
+        cmd += [f"--cap-add={c}" for c in INSTALL_CAPS + (ROOTLESS_INSTALL_CAPS if rootless else [])]
     else:
         cmd += ["--read-only", "--tmpfs", "/tmp:rw,mode=1777"]
     if args.keep_going:
@@ -480,7 +498,7 @@ def run_group(key, bs: list[Block], args, run_id: str, images: dict, cfg: dict |
             (work / "driver.sh").write_text(script.replace("{D}", "/docs-run"))
             (work / "home").mkdir(exist_ok=True)
             env = None
-            cmd = podman_command(s, work, f"docs-run-{run_id}-{uuid.uuid4().hex[:6]}", run_id, args)
+            cmd = podman_command(s, work, f"docs-run-{run_id}-{uuid.uuid4().hex[:6]}", run_id, args, podman_rootless())
         try:
             subprocess.run(cmd, env=env, timeout=int(s["timeout"]) + 30, stdout=subprocess.PIPE,
                            stderr=subprocess.STDOUT, check=False)
