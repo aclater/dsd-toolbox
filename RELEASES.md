@@ -765,7 +765,7 @@ The GStreamer plug-in for dsd-upsample. Summarised from its changelog.
 First public release, a source release for Linux x86_64: it builds with cargo and GStreamer 1.24 or later, and has no binaries.
 
 - **0.1.0** ([notes](https://github.com/dsd-toolbox/dsdup-gst/releases/tag/v0.1.0), 2026-11-25): the element `dsdupsample`
-  takes PCM at 44.1 to 352.8 kHz or 48 to 384 kHz, or DSD64, and gives DSD64, DSD128 or DSD256 with 1 to 6 channels;
+  takes PCM at 44.1 to 352.8 kHz or 48 to 384 kHz, or DSD64 to DSD256, and gives DSD64, DSD128 or DSD256 with 1 to 6 channels;
   `dsdfilesrc` reads DSF or DFF and `dsfsink` writes DSF. Its properties match the command-line options of
   dsd-upsample. The output is byte-identical to the dsd-upsample command-line tool of the same library release for the
   same input and settings, checked in CI on Linux x86_64. macOS and Windows are not supported yet.
