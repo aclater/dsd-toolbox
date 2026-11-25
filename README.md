@@ -25,6 +25,7 @@ times real time, with the commands to reproduce it.
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-measure/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd‑measure](https://github.com/dsd-toolbox/dsd-measure) | Measures DSD and PCM converters the way audiophile reviewers do, and writes one readable report | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="[{version}]({url})" -->[0.1.3](https://github.com/dsd-toolbox/dsd-measure/releases/tag/v0.1.3)<!-- /facts --> |
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd2pcm-rs/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd2pcm‑rs](https://github.com/dsd-toolbox/dsd2pcm-rs) | Rust and C library and CLI: DSD to PCM, and DSF, DFF and WAV files | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="[{version}]({url})" -->[0.2.0](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.2.0)<!-- /facts --> |
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-upsample-rs/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd‑upsample‑rs](https://github.com/dsd-toolbox/dsd-upsample-rs) | Converts DSF, DFF, WAV and FLAC files to DSD128 or DSD256, and PCM to DSD64, with output designed to be byte-identical across platforms and thread counts within a release (Linux x86_64 library and CLI; plug-ins and other systems follow) | <!-- facts:release repo=dsd-toolbox/dsd-upsample-rs fmt="[{version}]({url})" empty="not yet released" -->[0.1.0](https://github.com/dsd-toolbox/dsd-upsample-rs/releases/tag/v0.1.0)<!-- /facts --> |
+| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsdup-gst/main/docs/assets/icon-64.png" alt="" width="32"> | [dsdup‑gst](https://github.com/dsd-toolbox/dsdup-gst) | GStreamer plug-in for dsd-upsample: PCM or DSD64 to DSD256 in, DSD64, DSD128 or DSD256 out, with DSF and DFF file elements (Linux x86_64, built from source) | <!-- facts:release repo=dsd-toolbox/dsdup-gst fmt="[{version}]({url})" empty="not yet released" -->[0.1.0](https://github.com/dsd-toolbox/dsdup-gst/releases/tag/v0.1.0)<!-- /facts --> |
 
 ### Clean room
 
@@ -56,7 +57,8 @@ Which project do you need?
   later and installs from GitHub with pipx.
 - **Upconvert to DSD128 or DSD256** as files:
   [dsd-upsample-rs](https://github.com/dsd-toolbox/dsd-upsample-rs#quick-start). The first release
-  is the Linux x86_64 library and command line, installed with Cargo or from a release archive. A GStreamer plug-in, FFmpeg
+  is the Linux x86_64 library and command line, installed with Cargo or from a release archive. For GStreamer pipelines there is the plug-in
+  [dsdup-gst](https://github.com/dsd-toolbox/dsdup-gst#quick-start), built from source on Linux x86_64. FFmpeg
   patches, a foobar2000 component and macOS recipes are planned, and Windows and macOS follow in a
   later release.
 - **Build your own software**: the Rust library [scarletbook-rs](https://github.com/aclater/scarletbook-rs)

@@ -7,7 +7,7 @@ scarletbook-rs, the usual semantic-versioning rules apply.
 
 This page summarises public release notes only. The sources are each project's `CHANGELOG.md`,
 its GitHub releases and its milestones; for any detail, they win. Newest first. The release column of the table is generated from the
-GitHub releases, so it shows the publish date; the sections below show the date in each project's changelog, which can differ by a day. The newest release is dated <!-- facts:latest-date repos=dsd-toolbox/sacdfs,dsd-toolbox/pysacd,dsd-toolbox/beets-pysacd,aclater/scarletbook-rs,dsd-toolbox/dsd2pcm-rs,dsd-toolbox/dsd-measure,dsd-toolbox/dsd-upsample-rs -->2026-11-25<!-- /facts -->.
+GitHub releases, so it shows the publish date; the sections below show the date in each project's changelog, which can differ by a day. The newest release is dated <!-- facts:latest-date repos=dsd-toolbox/sacdfs,dsd-toolbox/pysacd,dsd-toolbox/beets-pysacd,aclater/scarletbook-rs,dsd-toolbox/dsd2pcm-rs,dsd-toolbox/dsd-measure,dsd-toolbox/dsd-upsample-rs,dsd-toolbox/dsdup-gst -->2026-11-25<!-- /facts -->.
 
 | Project | Latest release | In progress |
 |---|---|---|
@@ -18,6 +18,7 @@ GitHub releases, so it shows the publish date; the sections below show the date 
 | [dsd2pcm-rs](#dsd2pcm-rs) | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="{version} ({date})" -->0.2.0 (2026-11-25)<!-- /facts --> | 0.2.1 |
 | [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.3 (2026-11-25)<!-- /facts --> | 0.1.4 |
 | [dsd-upsample-rs](#dsd-upsample-rs) | <!-- facts:release repo=dsd-toolbox/dsd-upsample-rs fmt="{version} ({date})" empty="not yet released" -->0.1.0 (2026-11-25)<!-- /facts --> | nothing recorded |
+| [dsdup-gst](#dsdup-gst) | <!-- facts:release repo=dsd-toolbox/dsdup-gst fmt="{version} ({date})" empty="not yet released" -->0.1.0 (2026-11-25)<!-- /facts --> | nothing recorded |
 
 To keep this page current, each project's release checklist includes "update dsd-toolbox/dsd-toolbox
 RELEASES.md".
@@ -754,3 +755,17 @@ First public release, for Linux x86_64.
   archives for Linux x86_64 carry SHA-256 sums and build provenance attestations. Noise, distortion, idle tones,
   overload and speed are measured and published with the commands to reproduce them. Windows, macOS and aarch64 follow
   in later releases.
+
+## dsdup-gst
+
+The GStreamer plug-in for dsd-upsample. Summarised from its changelog.
+
+### 0.1 line
+
+First public release, a source release for Linux x86_64: it builds with cargo and GStreamer 1.24 or later, and has no binaries.
+
+- **0.1.0** ([notes](https://github.com/dsd-toolbox/dsdup-gst/releases/tag/v0.1.0), 2026-11-25): the element `dsdupsample`
+  takes PCM at 44.1 to 352.8 kHz or 48 to 384 kHz, or DSD64 to DSD256, and gives DSD64, DSD128 or DSD256 with 1 to 6 channels;
+  `dsdfilesrc` reads DSF or DFF and `dsfsink` writes DSF. Its properties match the command-line options of
+  dsd-upsample. The output is byte-identical to the dsd-upsample command-line tool of the same library release for the
+  same input and settings, checked in CI on Linux x86_64. macOS and Windows are not supported yet.
