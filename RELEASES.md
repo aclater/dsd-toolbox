@@ -7,7 +7,7 @@ scarletbook-rs, the usual semantic-versioning rules apply.
 
 This page summarises public release notes only. The sources are each project's `CHANGELOG.md`,
 its GitHub releases and its milestones; for any detail, they win. Newest first. The release column of the table is generated from the
-GitHub releases, so it shows the publish date; the sections below show the date in each project's changelog, which can differ by a day. The newest release is dated <!-- facts:latest-date repos=dsd-toolbox/sacdfs,dsd-toolbox/pysacd,dsd-toolbox/beets-pysacd,aclater/scarletbook-rs,dsd-toolbox/dsd2pcm-rs,dsd-toolbox/dsd-measure,dsd-toolbox/dsd-upsample-rs,dsd-toolbox/dsdup-gst -->2026-11-25<!-- /facts -->.
+GitHub releases, so it shows the publish date; the sections below show the date in each project's changelog, which can differ by a day. The newest release is dated <!-- facts:latest-date repos=dsd-toolbox/sacdfs,dsd-toolbox/pysacd,dsd-toolbox/beets-pysacd,aclater/scarletbook-rs,dsd-toolbox/dsd2pcm-rs,dsd-toolbox/dsd-measure,dsd-toolbox/dsd-upsample-rs,dsd-toolbox/dsdup-gst,dsd-toolbox/ffmpeg-dsf -->2026-11-25<!-- /facts -->.
 
 | Project | Latest release | In progress |
 |---|---|---|
@@ -19,6 +19,7 @@ GitHub releases, so it shows the publish date; the sections below show the date 
 | [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.3 (2026-11-25)<!-- /facts --> | 0.1.4 |
 | [dsd-upsample-rs](#dsd-upsample-rs) | <!-- facts:release repo=dsd-toolbox/dsd-upsample-rs fmt="{version} ({date})" empty="not yet released" -->0.1.0 (2026-11-25)<!-- /facts --> | nothing recorded |
 | [dsdup-gst](#dsdup-gst) | <!-- facts:release repo=dsd-toolbox/dsdup-gst fmt="{version} ({date})" empty="not yet released" -->0.1.0 (2026-11-25)<!-- /facts --> | nothing recorded |
+| [ffmpeg-dsf](#ffmpeg-dsf) | <!-- facts:release repo=dsd-toolbox/ffmpeg-dsf fmt="{version} ({date})" empty="not yet released" -->0.1.0 (2026-11-25)<!-- /facts --> | nothing recorded |
 
 To keep this page current, each project's release checklist includes "update dsd-toolbox/dsd-toolbox
 RELEASES.md".
@@ -769,3 +770,18 @@ First public release, a source release for Linux x86_64: it builds with cargo an
   `dsdfilesrc` reads DSF or DFF and `dsfsink` writes DSF. Its properties match the command-line options of
   dsd-upsample. The output is byte-identical to the dsd-upsample command-line tool of the same library release for the
   same input and settings, checked in CI on Linux x86_64. macOS and Windows are not supported yet.
+
+## ffmpeg-dsf
+
+Patches that add DSD upconversion and a DSF muxer to FFmpeg. Summarised from its changelog.
+
+### 0.1 line
+
+First public release, a source release for Linux x86_64: patches against FFmpeg master `05c674c9`, built with `--enable-libdsdupsample`, with no binaries. The patches are not part of FFmpeg.
+
+- **0.1.0** ([notes](https://github.com/dsd-toolbox/ffmpeg-dsf/releases/tag/v0.1.0), 2026-11-25): three patches: a fix to the DSF demuxer
+  (channel type 5 is 3.1, not 4.0), a DSF muxer for the four DSD codecs with 1 to 6 channels, and the encoder `libdsdupsample`, which takes PCM at
+  44.1 to 352.8 kHz or at 48, 96, 192 and 384 kHz and gives DSD64, DSD128 or DSD256 through the dsd-upsample library; order 8 is refused for
+  DSD128 output. The DSF output is byte-identical to the dsd-upsample command-line tool of the same library release, checked in CI on Linux
+  x86_64, except for the sample count in the header when the audio ends inside a byte and the channel type of 3.1 input. macOS and Windows are
+  not tested yet.
