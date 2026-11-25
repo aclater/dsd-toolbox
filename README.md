@@ -12,27 +12,28 @@ repository is the map of how they fit together; it holds no code.
 
 ## Projects
 
-They are built for speed: sacdfs decodes stereo and multichannel DST-compressed discs to DSF in
-real time even on a 2011 dual-core 32-bit Atom D2700 NAS, and the conversion libraries run
-many times faster than real time on any recent desktop CPU.
+They are built for speed, and measured: on a 2011 dual-core 32-bit Atom D2700 NAS, sacdfs plays
+stereo discs, and multichannel DST was too slow there until the decoder got about 1.7 times
+faster (not yet measured again on that NAS); the conversion libraries publish their speed, in
+times real time, with the commands to reproduce it.
 
 |  | Project | What | Latest |
 |---|---|---|---|
-| <img src="https://raw.githubusercontent.com/dsd-toolbox/sacdfs/main/docs/assets/icon-64.png" alt="" width="32"> | [sacdfs](https://github.com/dsd-toolbox/sacdfs) | Plays SACD images as DSF and WAV tracks in any player, without extracting them (Linux, NAS, Windows, macOS) | <!-- facts:release repo=dsd-toolbox/sacdfs fmt="[{version}]({url})" -->[0.7.2](https://github.com/dsd-toolbox/sacdfs/releases/tag/v0.7.2)<!-- /facts --> |
-| <img src="https://raw.githubusercontent.com/dsd-toolbox/pysacd/master/docs/assets/icon-64.png" alt="" width="32"> | [pysacd](https://github.com/dsd-toolbox/pysacd) | Extracts and converts SACD images to DSF, DSDIFF, FLAC or WAV, from the command line or Python | <!-- facts:release repo=dsd-toolbox/pysacd fmt="[{version}]({url})" -->[0.5.5](https://github.com/dsd-toolbox/pysacd/releases/tag/v0.5.5)<!-- /facts --> |
-| <img src="https://raw.githubusercontent.com/dsd-toolbox/beets-pysacd/main/docs/assets/icon-64.png" alt="" width="32"> | [beets‑pysacd](https://github.com/dsd-toolbox/beets-pysacd) | Imports SACD images into a beets music library, with MusicBrainz matching | <!-- facts:release repo=dsd-toolbox/beets-pysacd fmt="[{version}]({url})" -->[0.2.2](https://github.com/dsd-toolbox/beets-pysacd/releases/tag/v0.2.2)<!-- /facts --> |
-| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-measure/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd‑measure](https://github.com/dsd-toolbox/dsd-measure) | Measures DSD and PCM converters the way audiophile reviewers do, and writes one readable report | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="[{version}]({url})" -->[0.1.2](https://github.com/dsd-toolbox/dsd-measure/releases/tag/v0.1.2)<!-- /facts --> |
-| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd2pcm-rs/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd2pcm‑rs](https://github.com/dsd-toolbox/dsd2pcm-rs) | Rust and C library and CLI: DSD to PCM, and DSF, DFF and WAV files | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="[{version}]({url})" -->[0.1.2](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.1.2)<!-- /facts --> |
+| <img src="https://raw.githubusercontent.com/dsd-toolbox/sacdfs/main/docs/assets/icon-64.png" alt="" width="32"> | [sacdfs](https://github.com/dsd-toolbox/sacdfs) | Plays SACD images as DSF and WAV tracks in any player, without extracting them (Linux, NAS, Windows, macOS) | <!-- facts:release repo=dsd-toolbox/sacdfs fmt="[{version}]({url})" -->[0.9.0](https://github.com/dsd-toolbox/sacdfs/releases/tag/v0.9.0)<!-- /facts --> |
+| <img src="https://raw.githubusercontent.com/dsd-toolbox/pysacd/master/docs/assets/icon-64.png" alt="" width="32"> | [pysacd](https://github.com/dsd-toolbox/pysacd) | Extracts and converts SACD images to DSF, DSDIFF, FLAC or WAV, from the command line or Python | <!-- facts:release repo=dsd-toolbox/pysacd fmt="[{version}]({url})" -->[0.6.0](https://github.com/dsd-toolbox/pysacd/releases/tag/v0.6.0)<!-- /facts --> |
+| <img src="https://raw.githubusercontent.com/dsd-toolbox/beets-pysacd/main/docs/assets/icon-64.png" alt="" width="32"> | [beets‑pysacd](https://github.com/dsd-toolbox/beets-pysacd) | Imports SACD images into a beets music library, with MusicBrainz matching | <!-- facts:release repo=dsd-toolbox/beets-pysacd fmt="[{version}]({url})" -->[0.2.3](https://github.com/dsd-toolbox/beets-pysacd/releases/tag/v0.2.3)<!-- /facts --> |
+| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-measure/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd‑measure](https://github.com/dsd-toolbox/dsd-measure) | Measures DSD and PCM converters the way audiophile reviewers do, and writes one readable report | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="[{version}]({url})" -->[0.1.3](https://github.com/dsd-toolbox/dsd-measure/releases/tag/v0.1.3)<!-- /facts --> |
+| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd2pcm-rs/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd2pcm‑rs](https://github.com/dsd-toolbox/dsd2pcm-rs) | Rust and C library and CLI: DSD to PCM, and DSF, DFF and WAV files | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="[{version}]({url})" -->[0.2.0](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.2.0)<!-- /facts --> |
+| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-upsample-rs/main/docs/assets/icon-64.png" alt="" width="32"> | [dsd‑upsample‑rs](https://github.com/dsd-toolbox/dsd-upsample-rs) | Converts DSF, DFF, WAV and FLAC files to DSD128 or DSD256, and PCM to DSD64, with output designed to be byte-identical across platforms and thread counts within a release (Linux x86_64 library and CLI; plug-ins and other systems follow) | <!-- facts:release repo=dsd-toolbox/dsd-upsample-rs fmt="[{version}]({url})" empty="not yet released" -->not yet released<!-- /facts --> |
 
 ### Clean room
 
-sacd-spec and scarletbook-rs are DSD Toolbox projects inside the clean-room wall; their contributors read only sacd-spec.
+sacd-spec and scarletbook-rs are DSD Toolbox projects inside the clean-room wall; their contributors read only sacd-spec. They live under the aclater account by design: the wall keeps them apart from the other repositories.
 
+|  | Project | What | Latest |
 |---|---|---|---|
-| <img src="https://raw.githubusercontent.com/dsd-toolbox/sacdfs/main/docs/assets/icon-64.png" alt="" width="32"> | [sacdfs](https://github.com/dsd-toolbox/sacdfs) | Plays SACD images as DSF and WAV tracks in any player, without extracting them (Linux, NAS, Windows, macOS) | <!-- facts:release repo=dsd-toolbox/sacdfs fmt="[{version}]({url})" -->[0.7.2](https://github.com/dsd-toolbox/sacdfs/releases/tag/v0.7.2)<!-- /facts --> |
-| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-toolbox/main/docs/assets/projects/scarletbook-rs-64.png" alt="" width="32"> | [scarletbook‑rs](https://github.com/aclater/scarletbook-rs) | Rust and C library that reads SACD images and decodes DST | <!-- facts:release repo=aclater/scarletbook-rs fmt="[{version}]({url})" -->[1.0.2](https://github.com/aclater/scarletbook-rs/releases/tag/v1.0.2)<!-- /facts --> |
+| <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-toolbox/main/docs/assets/projects/scarletbook-rs-64.png" alt="" width="32"> | [scarletbook‑rs](https://github.com/aclater/scarletbook-rs) | Rust and C library that reads SACD images and decodes DST | <!-- facts:release repo=aclater/scarletbook-rs fmt="[{version}]({url})" -->[1.3.0](https://github.com/aclater/scarletbook-rs/releases/tag/v1.3.0)<!-- /facts --> |
 | <img src="https://raw.githubusercontent.com/dsd-toolbox/dsd-toolbox/main/docs/assets/projects/sacd-spec-64.png" alt="" width="32"> | [sacd‑spec](https://github.com/aclater/sacd-spec) | Specification of the SACD disc format, with a test corpus | <!-- facts:release repo=aclater/sacd-spec fmt="[{version}]({url})" empty="none: cite the commit" -->none: cite the commit<!-- /facts --> |
-
 
 ## Quick start
 
@@ -53,6 +54,11 @@ Which project do you need?
   [Stereophile](https://www.stereophile.com/content/measurements-maps-precision):
   [dsd-measure](https://github.com/dsd-toolbox/dsd-measure#quick-start). It needs Python 3.11 or
   later and installs from GitHub with pipx.
+- **Upconvert to DSD128 or DSD256** as files:
+  [dsd-upsample-rs](https://github.com/dsd-toolbox/dsd-upsample-rs#quick-start). The first release
+  is the Linux x86_64 library and command line, installed with Cargo or from a release archive. A GStreamer plug-in, FFmpeg
+  patches, a foobar2000 component and macOS recipes are planned, and Windows and macOS follow in a
+  later release.
 - **Build your own software**: the Rust library [scarletbook-rs](https://github.com/aclater/scarletbook-rs)
   for SACD images, [dsd2pcm-rs](https://github.com/dsd-toolbox/dsd2pcm-rs#quick-start) for DSD to PCM
   and DSF/DFF/WAV files, or [sacd-spec](https://github.com/aclater/sacd-spec#quick-start) to
