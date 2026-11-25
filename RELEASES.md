@@ -7,7 +7,7 @@ scarletbook-rs, the usual semantic-versioning rules apply.
 
 This page summarises public release notes only. The sources are each project's `CHANGELOG.md`,
 its GitHub releases and its milestones; for any detail, they win. Newest first. The release column of the table is generated from the
-GitHub releases; the newest is dated <!-- facts:latest-date repos=dsd-toolbox/sacdfs,dsd-toolbox/pysacd,dsd-toolbox/beets-pysacd,aclater/scarletbook-rs,dsd-toolbox/dsd2pcm-rs,dsd-toolbox/dsd-measure,dsd-toolbox/dsd-upsample-rs -->2026-11-25<!-- /facts -->.
+GitHub releases, so it shows the publish date; the sections below show the date in each project's changelog, which can differ by a day. The newest release is dated <!-- facts:latest-date repos=dsd-toolbox/sacdfs,dsd-toolbox/pysacd,dsd-toolbox/beets-pysacd,aclater/scarletbook-rs,dsd-toolbox/dsd2pcm-rs,dsd-toolbox/dsd-measure,dsd-toolbox/dsd-upsample-rs -->2026-11-25<!-- /facts -->.
 
 | Project | Latest release | In progress |
 |---|---|---|
@@ -17,7 +17,7 @@ GitHub releases; the newest is dated <!-- facts:latest-date repos=dsd-toolbox/sa
 | [scarletbook-rs](#scarletbook-rs) | <!-- facts:release repo=aclater/scarletbook-rs fmt="{version} ({date})" -->1.3.0 (2026-11-25)<!-- /facts --> | nothing recorded |
 | [dsd2pcm-rs](#dsd2pcm-rs) | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="{version} ({date})" -->0.2.0 (2026-11-25)<!-- /facts --> | 0.2.1 |
 | [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.3 (2026-11-25)<!-- /facts --> | 0.1.4 |
-| [dsd-upsample-rs](#dsd-upsample-rs) | <!-- facts:release repo=dsd-toolbox/dsd-upsample-rs fmt="{version} ({date})" empty="not yet released" -->not yet released<!-- /facts --> | nothing recorded |
+| [dsd-upsample-rs](#dsd-upsample-rs) | <!-- facts:release repo=dsd-toolbox/dsd-upsample-rs fmt="{version} ({date})" empty="not yet released" -->0.1.0 (2026-11-25)<!-- /facts --> | nothing recorded |
 
 To keep this page current, each project's release checklist includes "update dsd-toolbox/dsd-toolbox
 RELEASES.md".
@@ -610,6 +610,7 @@ stays at version 2. `scarletbook-pcm` is outside the freeze and is being depreca
 
 Releases: [1.0.0](https://github.com/aclater/scarletbook-rs/releases/tag/v1.0.0) (2026-11-23),
 [1.0.1](https://github.com/aclater/scarletbook-rs/releases/tag/v1.0.1) (2026-11-23),
+[1.0.2](https://github.com/aclater/scarletbook-rs/releases/tag/v1.0.2) (2026-11-23),
 [1.1.0](https://github.com/aclater/scarletbook-rs/releases/tag/v1.1.0) (2026-11-24), [1.1.1](https://github.com/aclater/scarletbook-rs/releases/tag/v1.1.1) (2026-11-25), [1.2.0](https://github.com/aclater/scarletbook-rs/releases/tag/v1.2.0) (2026-11-25), [1.3.0](https://github.com/aclater/scarletbook-rs/releases/tag/v1.3.0) (2026-11-25).
 
 ### 0.7 line
@@ -740,5 +741,16 @@ Releases: [0.1.0](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.1.0)
 
 ## dsd-upsample-rs
 
-Converts DSF, DFF, WAV and FLAC files to DSD128 or DSD256, and PCM to DSD64. Its first release, 0.1.0, is the
-Linux x86_64 library and command line; the summary follows the release notes when 0.1.0 is published.
+Converts DSF, DFF, WAV and FLAC files to DSD128 or DSD256, and PCM to DSD64. Summarised from its changelog.
+
+### 0.1 line
+
+First public release, for Linux x86_64.
+
+- **0.1.0** ([notes](https://github.com/dsd-toolbox/dsd-upsample-rs/releases/tag/v0.1.0), 2026-11-25): a Rust library, a
+  command line tool with a batch mode and a test signal generator, and a C library, converting DSF, DFF, WAV and FLAC
+  (PCM at 44.1 and 48 kHz families) to DSD128 or DSD256, and PCM to DSD64. The output is designed to be byte-identical
+  within a release across platforms and thread counts (golden hashes are checked in CI on Linux x86_64). Release
+  archives for Linux x86_64 carry SHA-256 sums and build provenance attestations. Noise, distortion, idle tones,
+  overload and speed are measured and published with the commands to reproduce them. Windows, macOS and aarch64 follow
+  in later releases.
