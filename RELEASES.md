@@ -7,16 +7,16 @@ scarletbook-rs, the usual semantic-versioning rules apply.
 
 This page summarises public release notes only. The sources are each project's `CHANGELOG.md`,
 its GitHub releases and its milestones; for any detail, they win. Newest first. The release column of the table is generated from the
-GitHub releases; the newest is dated <!-- facts:latest-date repos=dsd-toolbox/sacdfs,dsd-toolbox/pysacd,dsd-toolbox/beets-pysacd,aclater/scarletbook-rs,dsd-toolbox/dsd2pcm-rs,dsd-toolbox/dsd-measure -->2026-11-24<!-- /facts -->.
+GitHub releases; the newest is dated <!-- facts:latest-date repos=dsd-toolbox/sacdfs,dsd-toolbox/pysacd,dsd-toolbox/beets-pysacd,aclater/scarletbook-rs,dsd-toolbox/dsd2pcm-rs,dsd-toolbox/dsd-measure -->2026-11-25<!-- /facts -->.
 
 | Project | Latest release | In progress |
 |---|---|---|
-| [sacdfs](#sacdfs) | <!-- facts:release repo=dsd-toolbox/sacdfs fmt="{version} ({date})" -->0.7.2 (2026-11-22)<!-- /facts --> | 0.8.0 |
-| [pysacd](#pysacd) | <!-- facts:release repo=dsd-toolbox/pysacd fmt="{version} ({date})" -->0.5.5 (2026-11-23)<!-- /facts --> | 0.6.0 |
-| [beets-pysacd](#beets-pysacd) | <!-- facts:release repo=dsd-toolbox/beets-pysacd fmt="{version} ({date})" -->0.2.2 (2026-11-15)<!-- /facts --> | nothing recorded |
-| [scarletbook-rs](#scarletbook-rs) | <!-- facts:release repo=aclater/scarletbook-rs fmt="{version} ({date})" -->1.0.2 (2026-11-23)<!-- /facts --> | nothing recorded |
-| [dsd2pcm-rs](#dsd2pcm-rs) | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="{version} ({date})" -->0.1.2 (2026-11-24)<!-- /facts --> | 0.2.0 |
-| [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.2 (2026-11-24)<!-- /facts --> | 0.1.3 |
+| [sacdfs](#sacdfs) | <!-- facts:release repo=dsd-toolbox/sacdfs fmt="{version} ({date})" -->0.9.0 (2026-11-25)<!-- /facts --> | 0.8.0 |
+| [pysacd](#pysacd) | <!-- facts:release repo=dsd-toolbox/pysacd fmt="{version} ({date})" -->0.6.0 (2026-11-25)<!-- /facts --> | 0.6.0 |
+| [beets-pysacd](#beets-pysacd) | <!-- facts:release repo=dsd-toolbox/beets-pysacd fmt="{version} ({date})" -->0.2.3 (2026-11-25)<!-- /facts --> | nothing recorded |
+| [scarletbook-rs](#scarletbook-rs) | <!-- facts:release repo=aclater/scarletbook-rs fmt="{version} ({date})" -->1.3.0 (2026-11-25)<!-- /facts --> | nothing recorded |
+| [dsd2pcm-rs](#dsd2pcm-rs) | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="{version} ({date})" -->0.2.0 (2026-11-25)<!-- /facts --> | 0.2.0 |
+| [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.3 (2026-11-25)<!-- /facts --> | 0.1.3 |
 
 To keep this page current, each project's release checklist includes "update dsd-toolbox/dsd-toolbox
 RELEASES.md".
