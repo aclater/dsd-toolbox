@@ -144,12 +144,12 @@ class Hostile(unittest.TestCase):
     def test_builtin_image_is_pinned(self):
         self.assertRegex(R.BUILTIN_IMAGES[R.DEFAULT_ALIAS]["ref"], R.REF_RE)
 
-    def _cmd(self, extra=None, **settings):
+    def _cmd(self, extra=None, rootless=False, **settings):
         class A:
             memory, cpus, keep_going = "4g", "4", False
         s = {"image": "ok", "ref": f"example.org/a/b@sha256:{self.DIGEST}", "network": False,
              "packages": "", "setup": "", "timeout": "60"} | settings
-        return R.podman_command(s, Path("/w"), "n", "rid", A)
+        return R.podman_command(s, Path("/w"), "n", "rid", A, rootless)
 
     def test_podman_command_shape(self):
         cmd = self._cmd()
@@ -169,7 +169,30 @@ class Hostile(unittest.TestCase):
         self.assertIn("--cap-drop=ALL", cmd)
         self.assertNotIn("--cap-add=SYS_ADMIN", cmd)
         self.assertTrue(all(c.split("=")[1] in R.INSTALL_CAPS for c in cmd if c.startswith("--cap-add")))
+        self.assertNotIn("--cap-add=DAC_READ_SEARCH", cmd)   # rootful, or not known to be rootless
         self.assertIn("--network=none", self._cmd(packages="jq"))   # an image not allowed network gets none
+
+    def test_dac_read_search_only_when_rootless(self):
+        rootful = self._cmd(network=True, packages="jq")
+        self.assertNotIn("--cap-add=DAC_READ_SEARCH", rootful)
+        rootless = self._cmd(network=True, packages="jq", rootless=True)
+        self.assertIn("--cap-add=DAC_READ_SEARCH", rootless)
+        self.assertEqual(rootless.count("--cap-add=DAC_READ_SEARCH"), 1)
+        # no packages= or setup=: no capability added at all, rootless or not
+        self.assertFalse([c for c in self._cmd(network=True, rootless=True) if c.startswith("--cap-add")])
+
+    def test_rootless_comes_from_podman_info_and_a_doubt_is_not_rootless(self):
+        import unittest.mock as mock
+        def info(out, rc=0):
+            return mock.Mock(stdout=out, returncode=rc)
+        for out, want in (("true\n", True), ("false\n", False), ("", False), ("maybe", False)):
+            R.podman_rootless.cache_clear()
+            with mock.patch.object(R.subprocess, "run", return_value=info(out)):
+                self.assertIs(R.podman_rootless(), want, out)
+        R.podman_rootless.cache_clear()
+        with mock.patch.object(R.subprocess, "run", side_effect=FileNotFoundError):
+            self.assertIs(R.podman_rootless(), False)
+        R.podman_rootless.cache_clear()
 
     def test_marker_text_never_in_command(self):
         cmd = self._cmd(setup="curl evil", packages="jq,git")
