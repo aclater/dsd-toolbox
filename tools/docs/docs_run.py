@@ -74,7 +74,10 @@ DEFAULT_TIMEOUT = 1800
 CHECKOUT_DIR = "checkout"   # under the container's $HOME: where a checkout-mode group starts
 MAX_LEN = {"setup": 1000, "expect": 500, "drop": 200, "skip": 300, "packages": 1000}
 # What dnf needs to unpack packages when the root is not read-only (everything else is dropped).
-INSTALL_CAPS = ["CHOWN", "DAC_OVERRIDE", "FOWNER", "FSETID", "SETGID", "SETUID", "SETFCAP", "SYS_CHROOT"]
+# DAC_READ_SEARCH: root reads root-only files such as /etc/shadow (mode 0000 on UBI 9). On a GitHub
+# runner (rootless Podman 5.7) DAC_OVERRIDE alone leaves open() of it at EACCES, and `sudo` then fails
+# in its PAM account check ("cannot retrieve authentication info") on that image.
+INSTALL_CAPS = ["CHOWN", "DAC_OVERRIDE", "DAC_READ_SEARCH", "FOWNER", "FSETID", "SETGID", "SETUID", "SETFCAP", "SYS_CHROOT"]
 CONTAINER_HOME = "/docs-run/home"   # on the work folder (host disk), so installs and reports do not fill memory
 FENCE_RE = re.compile(r"^(\s*)(`{3,}|~{3,})\s*([A-Za-z0-9_+-]*)\s*(.*)$")
 DIRECTIVE_RE = re.compile(r"^\s*<!--\s*docs-run:(.*?)-->\s*$")
