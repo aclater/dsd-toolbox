@@ -7,21 +7,43 @@ scarletbook-rs, the usual semantic-versioning rules apply.
 
 This page summarises public release notes only. The sources are each project's `CHANGELOG.md`,
 its GitHub releases and its milestones; for any detail, they win. Newest first. The release column of the table is generated from the
-GitHub releases; the newest is dated <!-- facts:latest-date repos=dsd-toolbox/sacdfs,dsd-toolbox/pysacd,dsd-toolbox/beets-pysacd,aclater/scarletbook-rs,dsd-toolbox/dsd2pcm-rs,dsd-toolbox/dsd-measure -->2026-11-25<!-- /facts -->.
+GitHub releases; the newest is dated <!-- facts:latest-date repos=dsd-toolbox/sacdfs,dsd-toolbox/pysacd,dsd-toolbox/beets-pysacd,aclater/scarletbook-rs,dsd-toolbox/dsd2pcm-rs,dsd-toolbox/dsd-measure,dsd-toolbox/dsd-upsample-rs -->2026-11-25<!-- /facts -->.
 
 | Project | Latest release | In progress |
 |---|---|---|
-| [sacdfs](#sacdfs) | <!-- facts:release repo=dsd-toolbox/sacdfs fmt="{version} ({date})" -->0.9.0 (2026-11-25)<!-- /facts --> | 0.8.0 |
-| [pysacd](#pysacd) | <!-- facts:release repo=dsd-toolbox/pysacd fmt="{version} ({date})" -->0.6.0 (2026-11-25)<!-- /facts --> | 0.6.0 |
+| [sacdfs](#sacdfs) | <!-- facts:release repo=dsd-toolbox/sacdfs fmt="{version} ({date})" -->0.9.0 (2026-11-25)<!-- /facts --> | 0.9.1 (hardening) and the upconverted view |
+| [pysacd](#pysacd) | <!-- facts:release repo=dsd-toolbox/pysacd fmt="{version} ({date})" -->0.6.0 (2026-11-25)<!-- /facts --> | upconversion (no version yet) |
 | [beets-pysacd](#beets-pysacd) | <!-- facts:release repo=dsd-toolbox/beets-pysacd fmt="{version} ({date})" -->0.2.3 (2026-11-25)<!-- /facts --> | nothing recorded |
 | [scarletbook-rs](#scarletbook-rs) | <!-- facts:release repo=aclater/scarletbook-rs fmt="{version} ({date})" -->1.3.0 (2026-11-25)<!-- /facts --> | nothing recorded |
-| [dsd2pcm-rs](#dsd2pcm-rs) | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="{version} ({date})" -->0.2.0 (2026-11-25)<!-- /facts --> | 0.2.0 |
-| [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.3 (2026-11-25)<!-- /facts --> | 0.1.3 |
+| [dsd2pcm-rs](#dsd2pcm-rs) | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="{version} ({date})" -->0.2.0 (2026-11-25)<!-- /facts --> | 0.2.1 |
+| [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.3 (2026-11-25)<!-- /facts --> | 0.1.4 |
+| [dsd-upsample-rs](#dsd-upsample-rs) | <!-- facts:release repo=dsd-toolbox/dsd-upsample-rs fmt="{version} ({date})" empty="not yet released" -->not yet released<!-- /facts --> | nothing recorded |
 
 To keep this page current, each project's release checklist includes "update dsd-toolbox/dsd-toolbox
 RELEASES.md".
 
 ## sacdfs
+
+### 0.9 line
+
+WAV by dsd2pcm 0.2, and a quality comparison with every release.
+
+**0.9.0** (2026-11-25): the default WAV output changes. The conversion behind the WAV files is now
+dsd2pcm 0.2, with `--pcm-filter precise|fast`; `precise` is the default and measures 141.9 to
+145.0 dB SINAD on the 1 kHz test tone where 0.8.0 measured 116.0 to 122.1 dB. It takes about 1.8
+times the CPU time of `fast`, which gives the old samples and the old speed (the 32-bit x86 build
+defaults to `fast`). DSF, DFF and ISO output is byte-identical. Linux aarch64 builds are built and
+tested in CI on native arm64 runners; the tests have not yet been run on our own ARM hardware.
+Release: [0.9.0](https://github.com/dsd-toolbox/sacdfs/releases/tag/v0.9.0) (2026-11-25).
+
+### 0.8 line
+
+Manual pages, and the move to the `dsd-toolbox` organisation.
+
+**0.8.0** (2026-11-24): manual pages for `sacdfs`, `sacdfs-nfs` and `sacdfs-ctl`, generated from the
+command lines; the container image is now `ghcr.io/dsd-toolbox/sacdfs`; the macOS programs are
+signed and notarised; the shared documentation checks run on every pull request.
+Release: [0.8.0](https://github.com/dsd-toolbox/sacdfs/releases/tag/v0.8.0) (2026-11-24).
 
 ### 0.7 line
 
@@ -369,6 +391,16 @@ Releases: [0.1.0](https://github.com/dsd-toolbox/sacdfs/releases/tag/v0.1.0) (20
 
 ## pysacd
 
+### 0.6 line
+
+PCM conversion by dsd2pcm 0.2.
+
+**0.6.0** (2026-11-25): FLAC and WAV use dsd2pcm's `precise` filter by default (new
+`--pcm-filter precise|pysacd` and `--pcm-cutoff`): SINAD of a 1 kHz tone at 0 dB SACD measures 141.8
+dB at 88.2 kHz and 143.6 dB at 176.4 kHz against 0.5.5's 127.8 and 128.1 dB, so FLAC and WAV bytes
+differ from 0.5.5's. DSF, DSDIFF and ISO output is byte-identical to 0.5.5 on five real discs.
+Building from source now needs Rust. Release: [0.6.0](https://github.com/dsd-toolbox/pysacd/releases/tag/v0.6.0) (2026-11-25).
+
 ### 0.5 line
 
 Trust in what shipped: the comparison with `sacd_extract` works in CI again.
@@ -501,12 +533,16 @@ Releases: [0.2.0](https://github.com/dsd-toolbox/pysacd/releases/tag/v0.2.0) (20
 
 ### In progress
 
-No unreleased entries in `CHANGELOG.md` and no open milestone at the time of writing.
+Nothing recorded.
 
 ### 0.2 line
 
 Catalogue SACD images in place of deleted extracts, for sacdfs storage reclamation.
 
+- **0.2.3** ([notes](https://github.com/dsd-toolbox/beets-pysacd/releases/tag/v0.2.3), 2026-11-25): a step-by-step Windows 11 install guide;
+  a disc's multichannel and stereo areas are no longer skipped as duplicates of each other in an as-is
+  import or without a MusicBrainz match; two small fixes to `sacd-migrate` and `sacd-tags-export`.
+  Tested against pysacd 0.6.0, whose FLAC bytes differ from 0.5.5's.
 - **0.2.2** ([notes](https://github.com/dsd-toolbox/beets-pysacd/releases/tag/v0.2.2)), for libraries
   with albums catalogued on a sacdfs mount:
   - `sacd-migrate --mount DIR` moves albums catalogued on a sacdfs 0.4.0 mount to the names
@@ -552,12 +588,20 @@ Releases: [0.1.0](https://github.com/dsd-toolbox/beets-pysacd/releases/tag/v0.1.
 
 Summarised from its public GitHub release notes and milestones only.
 
-### 1.0 line
+### 1.x lines
 
 The interface is frozen under semantic versioning: no breaking change without 2.0.0. The C ABI
 stays at version 2. `scarletbook-pcm` is outside the freeze and is being deprecated in favour of
 [dsd2pcm-rs](#dsd2pcm-rs) ([#398](https://github.com/aclater/scarletbook-rs/issues/398)).
 
+- **1.3.0** (2026-11-25): reading past unreadable sectors is cheaper: an opt-in eager pass builds the
+  seek index's state past the marks, so the first range past a mark takes 2 to 3 read calls instead of
+  49 to 178 (counted reads, on generated images with marked sectors; not measured on real damaged discs).
+- **1.2.0** (2026-11-25): damaged discs: sectors can be marked unreadable, and the frames that touch them
+  are reported lost. A C read callback that returns -2 now means "unreadable" rather than an I/O error.
+- **1.1.1** (2026-11-25): two fixes to which sectors a speculative seek reads; the frames returned are unchanged.
+- **1.1.0** (2026-11-24): the four `sb_pcm_*` C functions are deprecated, and `scarletbook-pcm` is frozen
+  at 0.7.0 in favour of dsd2pcm-rs; nothing breaks.
 - **1.0.1** (2026-11-23): the same code as 1.0.0, released again so that the C interface crate
   `scarletbook-ffi` 1.x reaches crates.io; 1.0.0's publishing stopped partway, so
   `scarletbook-ffi` has no 1.0.0 ([#402](https://github.com/aclater/scarletbook-rs/issues/402)).
@@ -565,7 +609,8 @@ stays at version 2. `scarletbook-pcm` is outside the freeze and is being depreca
   half a percent of it.
 
 Releases: [1.0.0](https://github.com/aclater/scarletbook-rs/releases/tag/v1.0.0) (2026-11-23),
-[1.0.1](https://github.com/aclater/scarletbook-rs/releases/tag/v1.0.1) (2026-11-23).
+[1.0.1](https://github.com/aclater/scarletbook-rs/releases/tag/v1.0.1) (2026-11-23),
+[1.1.0](https://github.com/aclater/scarletbook-rs/releases/tag/v1.1.0) (2026-11-24), [1.1.1](https://github.com/aclater/scarletbook-rs/releases/tag/v1.1.1) (2026-11-25), [1.2.0](https://github.com/aclater/scarletbook-rs/releases/tag/v1.2.0) (2026-11-25), [1.3.0](https://github.com/aclater/scarletbook-rs/releases/tag/v1.3.0) (2026-11-25).
 
 ### 0.7 line
 
@@ -656,6 +701,17 @@ Releases: [0.1.0](https://github.com/aclater/scarletbook-rs/releases/tag/v0.1.0)
 
 ## dsd2pcm-rs
 
+### 0.2 line
+
+Measured filters: `precise` is the default.
+
+**0.2.0** (2026-11-24): a conversion with default settings gives other bytes than 0.1.x: SINAD with a
+very quiet DSD64 source rises from about 122 dB to 142 to 145 dB, and every filter is measured
+against 0.1.2 with dsd-measure 0.1.2. Breaking changes to the Rust API (`Filter::Default` is
+removed, typed errors, `Threads`), each with its migration in the changelog; the C interface stays at
+ABI version 1. Linux aarch64 builds are tested in CI on GitHub's ARM runners and under emulation; one
+long-running memory test does not yet pass there. Release: [0.2.0](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.2.0) (2026-11-24).
+
 ### 0.1 line
 
 First releases: DSD (DSF and DSDIFF files, or SACD frames) to 24-bit PCM as a Rust crate
@@ -665,6 +721,7 @@ and Windows x86_64.
 
 - **0.1.1** (2026-11-23): the macOS tool and C library are signed with a Developer ID and
   notarised by Apple; faster one-frame calls; an SSE2 level for 32-bit x86.
+- **0.1.2** (2026-11-23): security fixes; 0.1.0 and 0.1.1 are yanked from crates.io.
 - **0.1.0** (2026-11-23): first release; reproduces scarletbook-pcm 0.7.0's output byte for byte.
 
 Releases: [0.1.0](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.1.0) (2026-11-23),
@@ -674,4 +731,14 @@ Releases: [0.1.0](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.1.0)
 
 ### 0.1 line
 
+- **0.1.3 (2026-11-25):** a faster run (cached test signals, parallel runs), a `gate` profile and `dsd-measure gate OLD NEW`
+  that fail when a figure is worse beyond its measured repeatability, a reusable GitHub Actions step for it, and fixes to the null
+  test and to 48 kHz-family input. Compare figures only between runs of the same version.
+- **0.1.2 (2026-11-24):** usability fixes from a first-run study, a page of methodology limits, and measurement language in place of audibility language.
+- **0.1.1 (2026-11-24):** security fixes to the audit script and the compiled core's cache.
 - **0.1.0 (2026-11-23):** first release. One command measures a DSD to PCM converter or a PCM to DSD modulator with 19 audiophile-style tests and writes one readable report; the reference chain's own floor is about -147 dB at DSD64; pinned black-box containers for SoX-DSD, sacd_extract and FFmpeg.
+
+## dsd-upsample-rs
+
+Converts DSF, DFF, WAV and FLAC files to DSD128 or DSD256, and PCM to DSD64. Its first release, 0.1.0, is the
+Linux x86_64 library and command line; the summary follows the release notes when 0.1.0 is published.
