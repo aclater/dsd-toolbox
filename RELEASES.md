@@ -15,7 +15,7 @@ GitHub releases, so it shows the publish date; the sections below show the date 
 | [pysacd](#pysacd) | <!-- facts:release repo=dsd-toolbox/pysacd fmt="{version} ({date})" -->0.6.0 (2026-11-25)<!-- /facts --> | upconversion (no version yet) |
 | [beets-pysacd](#beets-pysacd) | <!-- facts:release repo=dsd-toolbox/beets-pysacd fmt="{version} ({date})" -->0.2.3 (2026-11-25)<!-- /facts --> | nothing recorded |
 | [scarletbook-rs](#scarletbook-rs) | <!-- facts:release repo=aclater/scarletbook-rs fmt="{version} ({date})" -->1.3.0 (2026-11-25)<!-- /facts --> | nothing recorded |
-| [dsd2pcm-rs](#dsd2pcm-rs) | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="{version} ({date})" -->0.2.0 (2026-11-25)<!-- /facts --> | 0.2.1 |
+| [dsd2pcm-rs](#dsd2pcm-rs) | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="{version} ({date})" -->0.2.1 (2026-11-26)<!-- /facts --> | nothing recorded |
 | [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.3 (2026-11-25)<!-- /facts --> | 0.1.4 |
 | [dsd-upsample-rs](#dsd-upsample-rs) | <!-- facts:release repo=dsd-toolbox/dsd-upsample-rs fmt="{version} ({date})" empty="not yet released" -->0.1.0 (2026-11-25)<!-- /facts --> | nothing recorded |
 | [dsdup-gst](#dsdup-gst) | <!-- facts:release repo=dsd-toolbox/dsdup-gst fmt="{version} ({date})" empty="not yet released" -->0.1.0 (2026-11-25)<!-- /facts --> | nothing recorded |
@@ -707,6 +707,10 @@ Releases: [0.1.0](https://github.com/aclater/scarletbook-rs/releases/tag/v0.1.0)
 ### 0.2 line
 
 Measured filters: `precise` is the default.
+
+**0.2.1** (2026-11-26): the version and the SIMD level in use, for bug reports: `dsd2pcm --version` prints
+both, and the library reports the level (`dsd2pcm::simd_level()`, `dsd2pcm_simd_level()`; the C interface stays at
+ABI version 1). No output byte changes. Release: [0.2.1](https://github.com/dsd-toolbox/dsd2pcm-rs/releases/tag/v0.2.1) (2026-11-26).
 
 **0.2.0** (2026-11-24): a conversion with default settings gives other bytes than 0.1.x: SINAD with a
 very quiet DSD64 source rises from about 122 dB to 142 to 145 dB, and every filter is measured
