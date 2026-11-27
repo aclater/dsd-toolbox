@@ -17,7 +17,7 @@ GitHub releases, so it shows the publish date; the sections below show the date 
 | [scarletbook-rs](#scarletbook-rs) | <!-- facts:release repo=aclater/scarletbook-rs fmt="{version} ({date})" -->1.3.0 (2026-11-25)<!-- /facts --> | nothing recorded |
 | [dsd2pcm-rs](#dsd2pcm-rs) | <!-- facts:release repo=dsd-toolbox/dsd2pcm-rs fmt="{version} ({date})" -->0.2.1 (2026-11-26)<!-- /facts --> | nothing recorded |
 | [dsd-measure](#dsd-measure) | <!-- facts:release repo=dsd-toolbox/dsd-measure fmt="{version} ({date})" -->0.1.3 (2026-11-25)<!-- /facts --> | 0.1.4 |
-| [dsd-upsample-rs](#dsd-upsample-rs) | <!-- facts:release repo=dsd-toolbox/dsd-upsample-rs fmt="{version} ({date})" empty="not yet released" -->0.1.0 (2026-11-25)<!-- /facts --> | nothing recorded |
+| [dsd-upsample-rs](#dsd-upsample-rs) | <!-- facts:release repo=dsd-toolbox/dsd-upsample-rs fmt="{version} ({date})" empty="not yet released" -->0.1.1 (2026-11-27)<!-- /facts --> | nothing recorded |
 | [dsdup-gst](#dsdup-gst) | <!-- facts:release repo=dsd-toolbox/dsdup-gst fmt="{version} ({date})" empty="not yet released" -->0.1.0 (2026-11-25)<!-- /facts --> | nothing recorded |
 | [ffmpeg-dsf](#ffmpeg-dsf) | <!-- facts:release repo=dsd-toolbox/ffmpeg-dsf fmt="{version} ({date})" empty="not yet released" -->0.1.0 (2026-11-25)<!-- /facts --> | nothing recorded |
 
@@ -751,8 +751,14 @@ Converts DSF, DFF, WAV and FLAC files to DSD128 or DSD256, and PCM to DSD64. Sum
 
 ### 0.1 line
 
-First public release, for Linux x86_64.
+Linux x86_64 from 0.1.0; macOS and Windows x64 from 0.1.1.
 
+- **0.1.1** ([notes](https://github.com/dsd-toolbox/dsd-upsample-rs/releases/tag/v0.1.1), 2026-11-26): release archives for
+  macOS (universal, signed and notarised) and Windows x64 (not code-signed yet, named `-unsigned`), with the command line
+  tool and the C library, SHA-256 sums and build provenance attestations; the output is byte-identical to 0.1.0's. Worker
+  threads are joined before a conversion returns, and a damaged DSF header is reported as a format error. The tests and
+  golden hashes run on macOS and Windows in CI and, in a separate job, on musl; the C library as a shared object on musl
+  is not covered yet.
 - **0.1.0** ([notes](https://github.com/dsd-toolbox/dsd-upsample-rs/releases/tag/v0.1.0), 2026-11-25): a Rust library, a
   command line tool with a batch mode and a test signal generator, and a C library, converting DSF, DFF, WAV and FLAC
   (PCM at 44.1 and 48 kHz families) to DSD128 or DSD256, and PCM to DSD64. The output is designed to be byte-identical
