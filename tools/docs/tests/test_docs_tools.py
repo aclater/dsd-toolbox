@@ -11,6 +11,7 @@ import sys
 import tempfile
 import threading
 import unittest
+import urllib.request
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
@@ -136,6 +137,11 @@ def make_repo(extra: dict[str, str | None] | None = None) -> Path:
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(text)
     return root
+
+
+def ip(*octets: int) -> str:
+    """A dotted address built from numbers, so no private-looking literal sits in this file."""
+    return ".".join(str(o) for o in octets)
 
 
 def lint(root: Path, **kw) -> list[str]:
@@ -282,6 +288,22 @@ class LintTests(Base):
         # no LICENSE file: the folder is not one, and nothing crashes
         self.assertIn("required-file", lint(self.repo({**d, "LICENSE": None})))
 
+    def test_badge_inside_a_facts_region_is_still_linted(self):
+        rd = FILES["README.md"]
+        badge = "[![Licence: MIT](https://img.shields.io/badge/licence-MIT-blue)](LICENSE)"
+        self.assertIn(badge, rd)
+        wrap = lambda b: f'<!-- facts:python-min fmt="{{v}}" -->{b}<!-- /facts -->'
+        self.assertEqual(lint(self.repo({"README.md": rd.replace(badge, wrap(badge))})), [])
+        bad = badge.replace("Licence: MIT", "License: MIT")   # American spelling in the alt text is still caught
+        self.assertIn("readme-badges", lint(self.repo({"README.md": rd.replace(badge, wrap(bad))})))
+
+    def test_lowercase_licenses_directory_holds_third_party_and_cc_by_texts(self):
+        # licenses/ (lowercase, to avoid a case clash with LICENSE on case-insensitive filesystems)
+        d = {"licenses/CC-BY-4.0.txt": "Creative Commons Attribution 4.0\n", "licenses/MIT.txt": "MIT License\n"}
+        self.assertEqual(lint(self.repo(d)), [])
+        # the folder does not stand in for the project's own LICENSE file (open question, see STATUS)
+        self.assertIn("required-file", lint(self.repo({**d, "LICENSE": None})))
+
     def test_slash_lists_are_not_dates(self):
         for line in ["Formats: 16/24/32-bit PCM.", "Rates of 44.1/48 kHz and 88.2/96 kHz.", "Depths 8/16/24-bit.",
                      "Rates 44.1/48/96 kHz.", "Plays 12/24/32 bit audio."]:
@@ -370,11 +392,17 @@ class LinkTests(Base):
             root = self.repo({"docs/user-guide.md": ug, ".docs.toml": toml})
             # 127.0.0.1 is excluded by default; the test lifts that with an empty default via a custom pattern
             orig = docs_links.DEFAULT_EXCLUDE
+            orig_check = docs_links.check_public_host
             docs_links.DEFAULT_EXCLUDE = []
+            orig_priv = docs_links._ip_is_private
+            docs_links.check_public_host = lambda host: None   # test only: the server is on loopback (see PrivateAddresses)
+            docs_links._ip_is_private = lambda ip: False
             try:
                 rc, out = self.run_links(root, "--external", "--retries", "0", "--delay", "0")
             finally:
                 docs_links.DEFAULT_EXCLUDE = orig
+                docs_links.check_public_host = orig_check
+                docs_links._ip_is_private = orig_priv
         finally:
             srv.shutdown()
         self.assertEqual(rc, 1)
@@ -502,6 +530,185 @@ class AuditTests(Base):
         with redirect_stdout(io.StringIO()):
             rc = docs_audit.main([str(bad), "--name", "demo", "--check", "--no-external"])
         self.assertEqual(rc, 1)
+
+
+class RunExcludeOtherTools(unittest.TestCase):
+    def test_markdown_files_and_facts_skip_excluded(self):
+        import docs_facts
+        d = Path(tempfile.mkdtemp())
+        (d / "README.md").write_text("# x\n")
+        (d / "CLAUDE.md").write_text("<!-- facts:nope -->\nx\n<!-- /facts -->\n")
+        (d / "sub").mkdir()
+        (d / "sub" / "AGENTS.md").write_text("# a\n")
+        (d / ".docs.toml").write_text('[run]\nexclude = ["CLAUDE.md", "**/AGENTS.md"]\n')
+        self.assertEqual([p.name for p in dl.markdown_files(d)], ["README.md"])
+        self.assertEqual([p.name for p in docs_facts.iter_files(d, [])], ["README.md"])
+        self.assertEqual([p.name for p in docs_facts.iter_files(d, ["CLAUDE.md", "README.md"])], ["README.md"])
+        (d / ".docs.toml").write_text("")
+        self.assertEqual(len(dl.markdown_files(d)), 3)
+        (d / ".docs.toml").write_text('[run]\nexclude = "CLAUDE.md"\n')
+        with self.assertRaises(dl.ConfigError):
+            dl.markdown_files(d)
+
+
+class CodeSpans(Base):
+    """Backtick lines used to take cubic time in the span regex (a pull request could stall every docs job)."""
+
+    def test_commonmark_pairing(self):
+        b = dl.blank_code_spans
+        self.assertEqual(b("a `b` c"), "a     c")
+        self.assertEqual(b("a ``b`c`` d"), "a" + " " * 9 + "d")
+        self.assertEqual(b("`a``b`"), "      ")          # a run of 2 does not close a run of 1
+        self.assertEqual(b("``a`"), "``a`")              # no closer of the same length: literal
+        self.assertEqual(b("x ` y"), "x ` y")
+        self.assertEqual(b("| ` ```sh run ` |"), "| " + " " * len("` ```sh run `") + " |")
+
+    def test_pathological_lines_are_fast(self):
+        import time
+        for line in ("`" * 5000, "`a" * 2500, "`" * 4999 + "x", ("`" * 3 + " ") * 1250, "`" * 100000):
+            t = time.perf_counter()
+            dl.blank_code_spans(line)
+            dl.prose_text(line)
+            self.assertLess(time.perf_counter() - t, 1.0, len(line))
+
+    def test_long_lines_are_not_scanned_and_lint_reports_them(self):
+        self.assertEqual(dl.code_spans("`a` " * 2000), [])        # over the cap: no span scanning
+        base = FILES["CONTRIBUTING.md"] if "CONTRIBUTING.md" in FILES else "# Contributing\n"
+        import time
+        t = time.perf_counter()
+        found = lint(self.repo({"CONTRIBUTING.md": base + "\nx " + "`" * 5000 + "\n"}))
+        self.assertLess(time.perf_counter() - t, 5.0)
+        self.assertIn("line-too-long", found)
+
+    def test_violation_heavy_files_lint_fast_and_the_report_is_capped(self):
+        import time
+        for body in (f"Host {ip(192, 168, 1, 20)} is the NAS.\n", "```\nx\n"):
+            root = self.repo({"CONTRIBUTING.md": "# Contributing\n\n" + body * 30000})
+            out = io.StringIO()
+            t = time.perf_counter()
+            with redirect_stdout(out), redirect_stderr(io.StringIO()):
+                docs_lint.main([str(root), "--name", "demo"])
+            self.assertLess(time.perf_counter() - t, 8.0, body)
+            lines = [l for l in out.getvalue().splitlines() if l.startswith("CONTRIBUTING.md:")]
+            self.assertLessEqual(len(lines), docs_lint.MAX_FINDINGS_PER_FILE + 1, body)
+            self.assertTrue(any("[too-many-findings]" in l for l in lines), body)
+
+    def test_a_few_findings_are_reported_in_full_and_never_twice(self):
+        root = self.repo({"CONTRIBUTING.md": f"# Contributing\n\nHost {ip(192, 168, 1, 20)} is the NAS.\nHost {ip(192, 168, 1, 21)} is the NAS.\n"})
+        out = io.StringIO()
+        with redirect_stdout(out), redirect_stderr(io.StringIO()):
+            docs_lint.main([str(root), "--name", "demo"])
+        lines = [l for l in out.getvalue().splitlines() if "[private-info]" in l]
+        self.assertEqual(len(lines), len(set(lines)))
+        self.assertEqual(len(lines), 2)
+        self.assertNotIn("too-many-findings", out.getvalue())
+
+    def test_other_line_regexes_stay_fast_on_long_input(self):
+        import time
+        for rx, text in ((dl.URL_RE, "https://a" + "(" * 1600), (dl.INLINE_DEST_RE, "[[a]" * 400),
+                         (dl.INLINE_DEST_RE, "[a](" + "a(" * 800)):
+            t = time.perf_counter()
+            list(rx.finditer(text))
+            self.assertLess(time.perf_counter() - t, 0.5)
+
+
+class WorkflowTimeouts(unittest.TestCase):
+    def test_every_docs_job_has_a_timeout(self):
+        wf = Path(__file__).resolve().parents[3] / ".github" / "workflows"
+        for f in sorted(wf.glob("docs*.yml")):
+            text = f.read_text()
+            jobs = len(re.findall(r"^    runs-on:", text, re.M))
+            timeouts = len(re.findall(r"^    timeout-minutes:", text, re.M))
+            self.assertEqual(jobs, timeouts, f"{f.name}: every job needs timeout-minutes")
+
+
+class PrivateAddresses(unittest.TestCase):
+    """External mode must not be a way to make CI probe the network it runs in."""
+
+    def test_literals_and_names_are_refused(self):
+        for host in ("127.0.0.1", ip(10, 1, 2, 3), ip(172, 16, 0, 1), ip(192, 168, 1, 1), ip(169, 254, 169, 254), ip(100, 64, 0, 1),
+                     "0.0.0.0", "[::1]", "::".join(("fe80", "1")), "::".join(("fd00", "1")), "::ffff:" + ip(10, 0, 0, 1), "localhost", "foo.local",
+                     ".".join(("host", "home", "arpa")), "1.0.0.127.in-addr.arpa", "printer", "foo.localhost"):
+            with self.assertRaises(docs_links.PrivateAddress, msg=host):
+                docs_links.check_public_host(host)
+
+    def test_public_literal_is_accepted(self):
+        docs_links.check_public_host("93.184.216.34")
+        docs_links.check_public_host("2606:4700:4700::1111")
+
+    def test_name_resolving_to_private_is_refused(self):
+        import socket
+        from unittest import mock
+        fake = lambda *a, **k: [(socket.AF_INET, 0, 0, "", (ip(10, 0, 0, 5), 0))]
+        with mock.patch("socket.getaddrinfo", fake):
+            with self.assertRaises(docs_links.PrivateAddress):
+                docs_links.check_public_host("rebind.example.net")
+        mixed = lambda *a, **k: [(socket.AF_INET, 0, 0, "", ("93.184.216.34", 0)), (socket.AF_INET, 0, 0, "", ("127.0.0.1", 0))]
+        with mock.patch("socket.getaddrinfo", mixed):
+            with self.assertRaises(docs_links.PrivateAddress):
+                docs_links.check_public_host("mixed.example.net")
+
+    def test_fetch_never_connects_to_a_local_server(self):
+        hits = []
+
+        class H(http.server.BaseHTTPRequestHandler):
+            def do_GET(self):
+                hits.append(self.path)
+                self.send_response(200)
+                self.end_headers()
+
+            def log_message(self, *a):
+                pass
+
+        srv = http.server.HTTPServer(("127.0.0.1", 0), H)
+        threading.Thread(target=srv.serve_forever, daemon=True).start()
+        try:
+            gate = docs_links.HostGate(1, 0)
+            why = docs_links.fetch(f"http://127.0.0.1:{srv.server_port}/x", gate, 0, 5)
+            self.assertIn("refused", why)
+            self.assertEqual(hits, [])
+        finally:
+            srv.shutdown()
+
+    def test_rebinding_between_check_and_connect_is_refused(self):
+        # the name looks public to the first lookup and private to the one the connection uses
+        import socket
+        from unittest import mock
+        answers = iter([[(socket.AF_INET, 0, 0, "", ("93.184.216.34", 0))],
+                        [(socket.AF_INET, 1, 6, "", ("127.0.0.1", 80))]])
+        with mock.patch("socket.getaddrinfo", lambda *a, **k: next(answers)):
+            docs_links.check_public_host("rebind.example.net")        # passes
+            with self.assertRaises(docs_links.PrivateAddress):
+                docs_links._connect_public("rebind.example.net", 80, 5)   # the connect-time lookup is checked again
+
+    def test_connection_goes_to_the_checked_address(self):
+        import socket
+        from unittest import mock
+        seen = []
+
+        class S:
+            def __init__(self, *a): seen.append(("socket", a))
+            def settimeout(self, t): pass
+            def connect(self, addr): seen.append(("connect", addr))
+
+        info = [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443))]
+        with mock.patch("socket.getaddrinfo", lambda *a, **k: info), mock.patch("socket.socket", S):
+            docs_links._connect_public("example.net", 443, 5)
+        self.assertIn(("connect", ("93.184.216.34", 443)), seen)
+
+    def test_no_proxy_handler_is_installed(self):
+        names = {type(h).__name__ for h in docs_links._OPENER.handlers}
+        self.assertNotIn("ProxyHandler", names)
+        import os
+        from unittest import mock
+        with mock.patch.dict(os.environ, {"http_proxy": "http://127.0.0.1:9", "https_proxy": "http://127.0.0.1:9"}):
+            self.assertEqual({type(h).__name__ for h in docs_links._OPENER.handlers} & {"ProxyHandler"}, set())
+
+    def test_redirect_to_private_is_refused(self):
+        h = docs_links._PublicOnlyRedirect()
+        req = urllib.request.Request("https://93.184.216.34/")
+        with self.assertRaises(docs_links.PrivateAddress):
+            h.redirect_request(req, None, 302, "Found", {}, f"http://{ip(169, 254, 169, 254)}/latest/meta-data/")
 
 
 if __name__ == "__main__":

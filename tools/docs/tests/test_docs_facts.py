@@ -159,6 +159,115 @@ class T(unittest.TestCase):
         self.assertIn(">`ubuntu-latest`, `macos-latest`<", new)
         self.assertIn(">3.11 and 3.13<", new)
 
+    def test_python_max_from_classifiers(self):
+        (self.d / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.10"\nclassifiers = [\n'
+                                               '"Programming Language :: Python :: 3",\n"Programming Language :: Python :: 3.9",\n'
+                                               '"Programming Language :: Python :: 3.13",\n"Programming Language :: Python :: 3.10",\n'
+                                               '"Programming Language :: Python :: Implementation :: CPython"]\n')
+        rc, new, _ = self.run_mode("generate", "<!-- facts:python-max -->x<!-- /facts --> <!-- facts:python-max fmt=\"{v}+\" -->x<!-- /facts -->\n")
+        self.assertEqual(rc, 0)
+        self.assertIn(">3.13<", new)   # numeric, not lexical: 3.13 > 3.9
+        self.assertIn(">3.13+<", new)
+        (self.d / "pyproject.toml").write_text('[project]\nclassifiers = ["Programming Language :: Python :: 3"]\n')
+        self.assertEqual(self.run_mode("check", new)[0], 2)
+
+    def test_dep_min_pyproject(self):
+        (self.d / "pyproject.toml").write_text(
+            '[project]\ndependencies = ["PyYAML>=6.0.1,<7", "requests[socks] ~= 2.31", "old==1.0", "loose", "up<3"]\n'
+            '[project.optional-dependencies]\ndev = ["pytest>=8.2"]\n[dependency-groups]\ntest = ["pytest>=8.0"]\n')
+        t = ("<!-- facts:dep-min name=pyyaml -->x<!-- /facts --> <!-- facts:dep-min name=requests -->x<!-- /facts --> "
+             "<!-- facts:dep-min name=old fmt=\"{name} {v}\" -->x<!-- /facts --> <!-- facts:dep-min name=pytest group=dev -->x<!-- /facts -->\n")
+        rc, new, _ = self.run_mode("generate", t)
+        self.assertEqual(rc, 0)
+        for want in (">6.0.1<", ">2.31<", ">old 1.0<", ">8.2<"):
+            self.assertIn(want, new)
+        # one name with two different floors is ambiguous without group=
+        self.assertEqual(self.run_mode("check", "<!-- facts:dep-min name=pytest -->x<!-- /facts -->\n")[0], 2)
+        for bad in ("loose", "up", "missing"):   # no lower bound, upper bound only, absent
+            self.assertEqual(self.run_mode("check", f"<!-- facts:dep-min name={bad} -->x<!-- /facts -->\n")[0], 2, bad)
+
+    def test_dep_min_cargo(self):
+        (self.d / "Cargo.toml").write_text('[package]\nname="x"\n[dependencies]\nserde = "1.0.190"\n'
+                                           'clap = { version = "^4.5", features = ["derive"] }\ngit-only = { git = "https://example.org/x" }\n'
+                                           '[dev-dependencies]\ntempfile = ">=3.8, <4"\n')
+        t = ("<!-- facts:dep-min name=serde -->x<!-- /facts --> <!-- facts:dep-min name=clap -->x<!-- /facts --> "
+             "<!-- facts:dep-min name=tempfile -->x<!-- /facts -->\n")
+        rc, new, _ = self.run_mode("generate", t)
+        self.assertEqual(rc, 0)
+        for want in (">1.0.190<", ">4.5<", ">3.8<"):
+            self.assertIn(want, new)
+        self.assertEqual(self.run_mode("check", "<!-- facts:dep-min name=git-only -->x<!-- /facts -->\n")[0], 2)
+
+    def test_region_builds_a_whole_badge_with_the_version_in_its_url(self):
+        # A marker cannot sit inside a URL (its spaces would break the link), so the region wraps the whole badge.
+        (self.d / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.11"\n')
+        badge = ('<!-- facts:python-min fmt="[![Python {v}+](https://img.shields.io/badge/python-{v}%2B-blue)]'
+                 '(https://www.python.org/)" -->x<!-- /facts -->\n')
+        rc, new, _ = self.run_mode("generate", badge)
+        self.assertEqual(rc, 0)
+        self.assertIn("[![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)](https://www.python.org/)<!-- /facts -->", new)
+        self.assertEqual(self.run_mode("check", new)[0], 0)
+        (self.d / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.12"\n')
+        self.assertEqual(self.run_mode("check", new)[0], 1)
+
+    def test_missing_manifest_is_exit_2_not_a_traceback(self):
+        for k in ("msrv", "python-min", "python-max", "dep-min name=x"):
+            self.assertEqual(self.run_mode("check", f"<!-- facts:{k} -->x<!-- /facts -->\n")[0], 2, k)
+
+    def test_file_cannot_leave_the_checkout(self):
+        import os
+        outside = self.d.parent / "outside.toml"
+        outside.write_text('[package]\nrust-version = "9.9"\n')
+        (self.d / "link.toml").symlink_to(outside)
+        for f in (str(outside), "../outside.toml", "link.toml", "sub/../../outside.toml"):
+            for key in ("msrv", "python-min", "python-max", "dep-min name=x"):
+                rc, _, out = self.run_mode("check", f'<!-- facts:{key} file="{f}" -->x<!-- /facts -->\n')
+                self.assertEqual(rc, 2, (key, f))
+        rc, _, _ = self.run_mode("check", f'<!-- facts:ci-matrix file="../outside.toml" job=a key=b -->x<!-- /facts -->\n')
+        self.assertEqual(rc, 2)
+        (self.d / "Cargo.toml").write_text('[package]\nrust-version = "1.80"\n')
+        self.assertEqual(self.run_mode("generate", '<!-- facts:msrv file="Cargo.toml" -->x<!-- /facts -->\n')[0], 0)
+
+    def test_repo_tag_and_name_are_shape_checked_before_any_request(self):
+        urls = []
+
+        class Spy(F.Source):
+            def get(self, url):
+                urls.append(url)
+                return {"__status__": 404}
+
+        self.src = Spy({})
+        for bad in ("../x", "x/../../user", "a/b/c", "a/b?x=1", "a", "a/..", "./b", "a/b#f", "a b/c", "a/b%2f..", ""):
+            rc, _, out = self.run_mode("check", f'<!-- facts:release repo="{bad}" -->x<!-- /facts -->\n')
+            self.assertEqual(rc, 2, bad)
+        for bad in ("../x", "a/b", "v1?x=1", "a..", "-x"):
+            self.run_mode("check", f'<!-- facts:release repo=new/proj tag="{bad}" -->x<!-- /facts -->\n')
+        for src in ("pypi", "crates"):
+            for bad in ("../x", "a/b", "a?b", "-x"):
+                rc, _, _ = self.run_mode("check", f'<!-- facts:release source={src} name="{bad}" -->x<!-- /facts -->\n')
+                self.assertEqual(rc, 2, (src, bad))
+        self.assertEqual([u for u in urls if ".." in u or "?" in u or "user" in u], [], urls)
+        self.assertFalse([u for u in urls if u.count("/") > 6], urls)
+        # a good value still reaches the API
+        urls.clear()
+        self.run_mode("check", '<!-- facts:release repo=old/proj -->x<!-- /facts -->\n')
+        self.assertTrue(urls and urls[0] == "https://api.github.com/repos/old/proj")
+
+    def test_a_trailing_newline_does_not_pass_the_shape_checks(self):
+        for fn, ok in ((F.check_repo, "a/b"), (F.check_pkg, "pkg")):
+            fn(ok)
+            with self.assertRaises(F.FactError):
+                fn(ok + "\n")
+        with self.assertRaises(F.FactError):
+            F.Source(dict(REL)).github_release("old/proj", "v1\n")
+
+    def test_bad_tag_is_refused_after_a_valid_repo(self):
+        src = F.Source(dict(REL))
+        for bad in ("../x", "a/b", "v1?x=1", "-x", "a b"):
+            with self.assertRaises(F.FactError, msg=bad):
+                src.github_release("old/proj", bad)
+        self.assertEqual(src.github_release("old/proj", "latest")["tag"], "v1.2.3")
+
     def test_errors_are_exit_2(self):
         for t in ("<!-- facts:nope -->x<!-- /facts -->", "<!-- facts:release -->x<!-- /facts -->",
                   "<!-- facts:ci-matrix file=ci.yml job=ghost key=os -->x<!-- /facts -->"):

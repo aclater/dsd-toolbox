@@ -19,7 +19,11 @@ from __future__ import annotations
 
 import argparse
 import concurrent.futures
+import http.client
+import ipaddress
 import re
+import socket
+import ssl
 import sys
 import threading
 import time
@@ -170,16 +174,114 @@ class _Gate:
         self.sem.release()
 
 
+class PrivateAddress(Exception):
+    pass
+
+
+PRIVATE_SUFFIXES = (".local", ".localhost", ".arpa", ".internal", ".lan", ".home", ".corp")
+
+
+def _ip_is_private(ip: ipaddress._BaseAddress) -> bool:
+    if isinstance(ip, ipaddress.IPv6Address) and ip.ipv4_mapped is not None:
+        ip = ip.ipv4_mapped
+    # is_global is False for RFC1918, loopback, link-local, CGNAT, ULA, reserved, multicast, unspecified
+    return not ip.is_global or ip.is_multicast
+
+
+def check_public_host(host: str) -> None:
+    """Raise PrivateAddress unless `host` is a public name or address. Resolves names: every answer must be public."""
+    host = host.strip("[]").rstrip(".").lower()
+    if not host:
+        raise PrivateAddress("empty host")
+    try:
+        literal = ipaddress.ip_address(host)
+    except ValueError:
+        literal = None
+    if literal is not None:
+        if _ip_is_private(literal):
+            raise PrivateAddress(f"{host} is a private, loopback or link-local address")
+        return
+    if host == "localhost" or host.endswith(PRIVATE_SUFFIXES) or "." not in host:
+        raise PrivateAddress(f"{host} is a local or private name")
+    try:
+        answers = socket.getaddrinfo(host, None, proto=socket.IPPROTO_TCP)
+    except socket.gaierror:
+        return                      # unresolvable: the fetch reports it as broken
+    for *_, sockaddr in answers:
+        ip = ipaddress.ip_address(sockaddr[0].split("%")[0])
+        if _ip_is_private(ip):
+            raise PrivateAddress(f"{host} resolves to a private address ({ip})")
+
+
+class _PublicOnlyRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        check_public_host(urllib.parse.urlsplit(newurl).hostname or "")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
+def _connect_public(host: str, port: int, timeout) -> socket.socket:
+    """Resolve `host` now, refuse any private answer, and connect to the address that was checked, so the
+    name cannot resolve to something else between the check and the connection (DNS rebinding)."""
+    infos = socket.getaddrinfo(host, port, type=socket.SOCK_STREAM)
+    if not infos:
+        raise OSError(f"{host} does not resolve")
+    for *_, sockaddr in infos:
+        if _ip_is_private(ipaddress.ip_address(sockaddr[0].split("%")[0])):
+            raise PrivateAddress(f"{host} resolves to a private address ({sockaddr[0]})")
+    last: OSError | None = None
+    for fam, typ, proto, _, sockaddr in infos:
+        try:
+            sock = socket.socket(fam, typ, proto)
+            sock.settimeout(timeout)
+            sock.connect(sockaddr)
+            return sock
+        except OSError as e:
+            last = e
+    raise last or OSError(f"cannot connect to {host}")
+
+
+class _PublicHTTPConnection(http.client.HTTPConnection):
+    def connect(self):
+        self.sock = _connect_public(self.host, self.port, self.timeout)
+
+
+class _PublicHTTPSConnection(http.client.HTTPSConnection):
+    def connect(self):
+        sock = _connect_public(self.host, self.port, self.timeout)
+        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)   # certificate checked against the name
+
+
+class _PublicHTTPHandler(urllib.request.HTTPHandler):
+    def http_open(self, req):
+        return self.do_open(_PublicHTTPConnection, req)
+
+
+class _PublicHTTPSHandler(urllib.request.HTTPSHandler):
+    def https_open(self, req):
+        return self.do_open(_PublicHTTPSConnection, req, context=ssl.create_default_context())
+
+
+# No ProxyHandler: http_proxy/https_proxy in the environment must not carry the request past the address check.
+_OPENER = urllib.request.OpenerDirector()
+for _h in (urllib.request.UnknownHandler(), _PublicHTTPHandler(), _PublicHTTPSHandler(), _PublicOnlyRedirect(),
+           urllib.request.HTTPDefaultErrorHandler(), urllib.request.HTTPErrorProcessor()):
+    _OPENER.add_handler(_h)
+
+
 def fetch(url: str, gate: HostGate, retries: int, timeout: float) -> str | None:
     """None when the URL resolves, else a short reason."""
     host = urllib.parse.urlsplit(url).netloc
+    try:
+        check_public_host(urllib.parse.urlsplit(url).hostname or "")
+    except PrivateAddress as e:
+        return f"refused: {e}"
     reason = "no attempt"
     for attempt in range(retries + 1):
         if attempt:
             time.sleep(min(2 ** attempt * 2, 30))
         req = urllib.request.Request(url.split("#")[0], headers={"User-Agent": USER_AGENT, "Accept": "text/html,application/xhtml+xml,*/*;q=0.8"})
         try:
-            with gate(host), urllib.request.urlopen(req, timeout=timeout) as r:
+            with gate(host), _OPENER.open(req, timeout=timeout) as r:
                 r.read(1)
                 return None
         except urllib.error.HTTPError as e:
@@ -193,7 +295,11 @@ def fetch(url: str, gate: HostGate, retries: int, timeout: float) -> str | None:
                 continue            # github.com answers 404 for pages that exist when it is under load; ask once more
             elif e.code < 500 and e.code != 408:
                 return reason
+        except PrivateAddress as e:
+            return f"refused: redirect to {e}"
         except (urllib.error.URLError, TimeoutError, OSError) as e:
+            if isinstance(getattr(e, "reason", None), PrivateAddress):
+                return f"refused: redirect to {e.reason}"
             reason = f"{type(e).__name__}: {getattr(e, 'reason', e)}"
     return reason
 

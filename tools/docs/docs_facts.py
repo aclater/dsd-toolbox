@@ -37,6 +37,9 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import docslib as dl  # noqa: E402
+
 
 class _DropAuthOnRedirect(urllib.request.HTTPRedirectHandler):
     """Never send the Authorization header to another host than the one it was meant for."""
@@ -69,6 +72,22 @@ class FactError(Exception):
 
 
 # --------------------------------------------------------------------------- sources
+
+
+REPO_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+TAG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,99}$")
+PKG_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,99}$")
+
+
+def check_repo(repo: str) -> None:
+    """OWNER/NAME only. The value goes into an API path, so '..', extra segments and query strings are refused."""
+    if not REPO_RE.fullmatch(repo) or any(part in (".", "..") for part in repo.split("/")):
+        raise FactError(f"repo={repo!r} is not OWNER/NAME (letters, digits, '.', '_', '-')")
+
+
+def check_pkg(name: str) -> None:
+    if not PKG_RE.fullmatch(name) or ".." in name:
+        raise FactError(f"name={name!r} is not a plain package name")
 
 
 class Source:
@@ -113,6 +132,7 @@ class Source:
 
     # -- GitHub
     def repo(self, repo: str) -> dict:
+        check_repo(repo)
         d = self.get(f"https://api.github.com/repos/{repo}")
         if d.get("__status__") == 404:
             raise FactError(f"repository {repo} not found")
@@ -120,6 +140,9 @@ class Source:
 
     def github_release(self, repo: str, tag: str = "latest") -> dict | None:
         canon = self.repo(repo)["full_name"]
+        check_repo(canon)
+        if tag != "latest" and not TAG_RE.fullmatch(tag):
+            raise FactError(f"tag={tag!r} is not a plain tag name (letters, digits, '.', '_', '+', '-')")
         path = "latest" if tag == "latest" else f"tags/{tag}"
         d = self.get(f"https://api.github.com/repos/{canon}/releases/{path}")
         if d.get("__status__") == 404:
@@ -135,6 +158,7 @@ class Source:
 
     # -- registries
     def crates_release(self, name: str) -> dict | None:
+        check_pkg(name)
         d = self.get(f"https://crates.io/api/v1/crates/{name}")
         if d.get("__status__") == 404:
             return None
@@ -144,6 +168,7 @@ class Source:
                 "url": f"https://crates.io/crates/{name}/{ver}", "assets": []}
 
     def pypi_release(self, name: str) -> dict | None:
+        check_pkg(name)
         d = self.get(f"https://pypi.org/pypi/{name}/json")
         if d.get("__status__") == 404:
             return None
@@ -305,7 +330,7 @@ def _workflow_matrix(path: Path, job: str) -> dict[str, list[str]]:
 
 
 def f_ci_matrix(a: dict, ctx: "Ctx") -> str:
-    m = _workflow_matrix(ctx.root / need(a, "file"), need(a, "job"))
+    m = _workflow_matrix(ctx.path(need(a, "file")), need(a, "job"))
     key = need(a, "key")
     if key not in m:
         raise FactError(f"matrix has no {key!r} (has: {', '.join(m) or 'nothing'})")
@@ -315,7 +340,7 @@ def f_ci_matrix(a: dict, ctx: "Ctx") -> str:
 
 
 def f_msrv(a: dict, ctx: "Ctx") -> str:
-    d = tomllib.loads((ctx.root / a.get("file", "Cargo.toml")).read_text())
+    d = tomllib.loads(ctx.path(a.get("file", "Cargo.toml")).read_text())
     v = d.get("package", {}).get("rust-version") or d.get("workspace", {}).get("package", {}).get("rust-version")
     if not v:
         raise FactError("no rust-version in the manifest")
@@ -323,7 +348,7 @@ def f_msrv(a: dict, ctx: "Ctx") -> str:
 
 
 def f_python_min(a: dict, ctx: "Ctx") -> str:
-    d = tomllib.loads((ctx.root / a.get("file", "pyproject.toml")).read_text())
+    d = tomllib.loads(ctx.path(a.get("file", "pyproject.toml")).read_text())
     spec = d.get("project", {}).get("requires-python", "")
     m = re.search(r">=\s*(\d+\.\d+)", spec)
     if not m:
@@ -357,9 +382,79 @@ def f_install(a: dict, ctx: "Ctx") -> str:
     raise FactError(f"unknown install kind {kind!r} (pip, cargo, pipx-git, download)")
 
 
+def f_python_max(a: dict, ctx: "Ctx") -> str:
+    """The newest Python the project says it supports: the highest `Programming Language :: Python :: 3.N` classifier."""
+    d = tomllib.loads(ctx.path(a.get("file", "pyproject.toml")).read_text())
+    found = []
+    for c in d.get("project", {}).get("classifiers", []):
+        m = re.fullmatch(r"Programming Language :: Python :: (\d+)\.(\d+)", c.strip())
+        if m:
+            found.append((int(m[1]), int(m[2])))
+    if not found:
+        raise FactError("no 'Programming Language :: Python :: X.Y' classifier in the manifest")
+    major, minor = max(found)
+    return unescape(a.get("fmt", "{v}")).format(v=f"{major}.{minor}")
+
+
+def _norm(name: str) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+FLOOR_RE = re.compile(r"(?:>=|~=|==|\^|~|=)?\s*v?(\d+(?:\.\d+){0,2}(?:[-+.][0-9A-Za-z.]+)?)")
+
+
+def _version_floor(spec: str, what: str) -> str:
+    """The lowest version a requirement allows: `>=1.2`, `~=1.2`, `==1.2`, `^1.2`, `~1.2`, `1.2` (Cargo), `>=1.2,<2`."""
+    for part in (x.strip() for x in spec.split(",")):
+        m = FLOOR_RE.fullmatch(part)
+        if m:   # `<2`, `!=1.5` and `>1` do not match: they are not a floor
+            return m.group(1)
+    raise FactError(f"{what}: {spec!r} has no lower bound I can read (use >=, ~=, ==, ^ or a plain version)")
+
+
+def f_dep_min(a: dict, ctx: "Ctx") -> str:
+    """The lower bound of one dependency: pyproject.toml (project.dependencies, optional-dependencies, dependency-groups)
+    or Cargo.toml ([dependencies], [dev-dependencies], [build-dependencies], [workspace.dependencies])."""
+    name = need(a, "name")
+    fname = a.get("file", "pyproject.toml" if (ctx.root / "pyproject.toml").exists() else "Cargo.toml")
+    d = tomllib.loads(ctx.path(fname).read_text())
+    group = a.get("group")
+    specs: list[str] = []
+    if Path(fname).name == "Cargo.toml":
+        tables = [d.get(k, {}) for k in ("dependencies", "dev-dependencies", "build-dependencies")]
+        tables.append(d.get("workspace", {}).get("dependencies", {}))
+        if group:
+            tables = [d.get(group, {})]
+        for t in tables:
+            ent = t.get(name)
+            if isinstance(ent, str):
+                specs.append(ent)
+            elif isinstance(ent, dict) and isinstance(ent.get("version"), str):
+                specs.append(ent["version"])
+    else:
+        proj = d.get("project", {})
+        named = {**{g: i for g, i in proj.get("optional-dependencies", {}).items()},
+                 **{g: i for g, i in d.get("dependency-groups", {}).items()}}
+        if group:
+            reqs = [r for r in named.get(group, []) if isinstance(r, str)]
+        else:
+            reqs = list(proj.get("dependencies", [])) + [r for i in named.values() for r in i if isinstance(r, str)]
+        for r in reqs:
+            m = re.match(r"\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(?:\[[^\]]*\])?\s*\(?([^;@]*)", r)
+            if m and _norm(m.group(1)) == _norm(name):
+                specs.append(m.group(2).strip().rstrip(")"))
+    if not specs:
+        raise FactError(f"{fname}: no dependency {name!r}" + (f" in group {group!r}" if group else ""))
+    floors = {_version_floor(sp, f"{fname}: {name}") for sp in specs}
+    if len(floors) > 1:
+        raise FactError(f"{fname}: {name!r} has different lower bounds ({', '.join(sorted(floors))}); name a group=")
+    return unescape(a.get("fmt", "{v}")).format(v=floors.pop(), name=name)
+
+
 EVALUATORS = {
     "release": f_release, "latest-date": f_latest_date, "assets": f_assets,
-    "ci-matrix": f_ci_matrix, "msrv": f_msrv, "python-min": f_python_min, "install": f_install,
+    "ci-matrix": f_ci_matrix, "msrv": f_msrv, "python-min": f_python_min, "python-max": f_python_max,
+    "dep-min": f_dep_min, "install": f_install,
 }
 
 
@@ -370,6 +465,14 @@ class Ctx:
         self.today = datetime.date.today()
         self.soft: list[str] = []   # stale regions inside the grace period (warnings)
         self.hard = 0               # stale regions that fail the check
+
+    def path(self, name: str) -> Path:
+        """A file named by file=, which must stay inside the checkout (no absolute path, no `..`, no symlink out)."""
+        root = self.root.resolve()
+        p = (root / name).resolve()
+        if Path(name).is_absolute() or not p.is_relative_to(root):
+            raise FactError(f"file={name!r} is outside the repository")
+        return p
 
 
 # --------------------------------------------------------------------------- regions
@@ -427,7 +530,7 @@ def process(text: str, ctx: Ctx, name: str, errors: list[str]) -> tuple[str, int
         key, argtext, body = m.group(1), m.group(2), m.group(3)
         try:
             out = evaluate(key, argtext, ctx)
-        except (FactError, KeyError, IndexError, ValueError) as e:
+        except (FactError, KeyError, IndexError, ValueError, OSError) as e:
             errors.append(f"{name}:{lineno(m.start())}: facts:{key}: {e}")
             return m.group(0)
         if body.startswith("\n") and body.endswith("\n"):
@@ -447,7 +550,7 @@ def process(text: str, ctx: Ctx, name: str, errors: list[str]) -> tuple[str, int
         indent, key, argtext = m.group(1), m.group(2), m.group(3)
         try:
             out = evaluate(key, argtext, ctx)
-        except (FactError, KeyError, IndexError, ValueError) as e:
+        except (FactError, KeyError, IndexError, ValueError, OSError) as e:
             errors.append(f"{name}:{lineno(m.start())}: facts:{key}: {e}")
             return m.group(0)
         body = "".join(f"{indent}{l}\n" for l in out.split("\n"))
@@ -462,13 +565,16 @@ def process(text: str, ctx: Ctx, name: str, errors: list[str]) -> tuple[str, int
 
 
 def iter_files(root: Path, files: list[str]) -> list[Path]:
+    exclude = dl.parse_run_exclude(dl.load_config(root).raw)   # [run] exclude: files no docs tool looks at
     if files:
-        return [Path(f) if Path(f).is_absolute() else root / f for f in files]
-    out = []
-    for dp, dn, fn in os.walk(root):
-        dn[:] = sorted(d for d in dn if d not in SKIP_DIRS)
-        out += [Path(dp) / f for f in sorted(fn) if f.endswith(".md")]
-    return out
+        out = [Path(f) if Path(f).is_absolute() else root / f for f in files]
+    else:
+        out = []
+        for dp, dn, fn in os.walk(root):
+            dn[:] = sorted(d for d in dn if d not in SKIP_DIRS)
+            out += [Path(dp) / f for f in sorted(fn) if f.endswith(".md")]
+    return [p for p in out if not (p.resolve().is_relative_to(root.resolve())
+                                   and dl.matches(str(p.resolve().relative_to(root.resolve())), exclude))]
 
 
 def run(mode: str, root: Path, files: list[str], src: Source, out=sys.stdout,

@@ -92,6 +92,87 @@ class T(unittest.TestCase):
         self.assertEqual(R.main(["run", "--engine", "local", "--root", str(self.d)]), 0)
 
 
+class ResultFiles(unittest.TestCase):
+    """The container writes rc/timing/output/setup.log; the host must not trust or follow them."""
+
+    def setUp(self):
+        self.d = Path(tempfile.mkdtemp())
+
+    def test_regular_file_is_read(self):
+        (self.d / "o0.log").write_text("hi\n")
+        self.assertEqual(R.read_result(self.d / "o0.log"), "hi\n")
+
+    def test_symlink_is_refused(self):
+        (self.d / "secret").write_text("0\n")
+        os.symlink(self.d / "secret", self.d / "rc0")
+        with self.assertRaises(R.UnsafeResult):
+            R.read_rc(self.d / "rc0")
+        os.symlink(self.d / "nowhere", self.d / "dangling")
+        with self.assertRaises(R.UnsafeResult):
+            R.read_result(self.d / "dangling")
+
+    def test_fifo_and_directory_are_refused_without_blocking(self):
+        os.mkfifo(self.d / "fifo")
+        with self.assertRaises(R.UnsafeResult):
+            R.read_result(self.d / "fifo")
+        (self.d / "dir").mkdir()
+        with self.assertRaises(R.UnsafeResult):
+            R.read_result(self.d / "dir")
+
+    def test_non_numeric_rc_is_refused(self):
+        for bad in ("", "abc", "0 ; x", "-1", "1e3", "0000", "99999"):
+            (self.d / "rc").write_text(bad)
+            with self.assertRaises(R.UnsafeResult, msg=repr(bad)):
+                R.read_rc(self.d / "rc")
+        for good, want in (("0\n", 0), ("1", 1), ("137\n", 137)):
+            (self.d / "rc").write_text(good)
+            self.assertEqual(R.read_rc(self.d / "rc"), want)
+
+    def test_block_that_symlinks_its_rc_file_fails(self):
+        # local engine: the block can reach the work folder (parent of its home) and plant a symlink
+        target = self.d / "elsewhere"
+        target.write_text("0\n")
+        doc = self.d / "README.md"
+        doc.write_text(f"```sh run\nrm -f \"$HOME/../rc0\"; ln -s {target} \"$HOME/../rc0\"\n```\n")
+        self.assertEqual(R.main(["run", "--engine", "local", "--root", str(self.d)]), 1)
+
+
+class RunExclude(unittest.TestCase):
+    """[run] exclude keeps files (CLAUDE.md, AGENTS.md, ...) out of every docs tool."""
+
+    def setUp(self):
+        self.d = Path(tempfile.mkdtemp())
+        (self.d / "README.md").write_text("```sh run\necho ok\n```\n")
+        (self.d / "CLAUDE.md").write_text("```sh run\nfalse\n```\n")
+        (self.d / "docs").mkdir()
+        (self.d / "docs" / "AGENTS.md").write_text("```sh run\nfalse\n```\n")
+        (self.d / ".docs.toml").write_text('[run]\nexclude = ["CLAUDE.md", "**/AGENTS.md"]\n')
+
+    def test_collect_and_run_skip_excluded(self):
+        self.assertEqual({b.file for b in R.collect(self.d, R.load_run(self.d)["exclude"])}, {"README.md"})
+        self.assertEqual(R.main(["run", "--engine", "local", "--root", str(self.d)]), 0)
+
+    def test_without_the_list_nothing_is_excluded(self):
+        (self.d / ".docs.toml").write_text("")
+        self.assertEqual(R.main(["run", "--engine", "local", "--root", str(self.d)]), 1)
+
+    def test_bad_values_refused(self):
+        for bad in ('exclude = "CLAUDE.md"', 'exclude = [1]', 'exclude = ["/etc/x.md"]', 'exclude = ["../x.md"]',
+                    'exclude = [""]'):
+            (self.d / ".docs.toml").write_text(f"[run]\n{bad}\n")
+            self.assertEqual(R.main(["list", "--root", str(self.d)]), 2, bad)
+
+    def test_exclude_comes_from_the_allowlist_ref(self):
+        # a branch cannot hide a failing block by excluding it: with --allowlist-ref the base list applies
+        git(self.d, "init", "-q", "-b", "main")
+        (self.d / ".docs.toml").write_text("")
+        git(self.d, "add", "-A")
+        git(self.d, "commit", "-q", "-m", "base")
+        (self.d / ".docs.toml").write_text('[run]\nexclude = ["CLAUDE.md", "**/AGENTS.md"]\n')
+        self.assertEqual(R.main(["list", "--root", str(self.d), "--allowlist-ref", "HEAD"]), 0)
+        self.assertEqual(R.main(["run", "--engine", "local", "--root", str(self.d), "--allowlist-ref", "HEAD"]), 1)
+
+
 class Hostile(unittest.TestCase):
     """A marker is text from a file that may not be ours: it may never reach podman as an option."""
 
@@ -146,7 +227,7 @@ class Hostile(unittest.TestCase):
 
     def _cmd(self, extra=None, rootless=False, **settings):
         class A:
-            memory, cpus, keep_going = "4g", "4", False
+            memory, cpus, keep_going, unprivileged = "4g", "4", False, False
         s = {"image": "ok", "ref": f"example.org/a/b@sha256:{self.DIGEST}", "network": False,
              "packages": "", "setup": "", "timeout": "60"} | settings
         return R.podman_command(s, Path("/w"), "n", "rid", A, rootless)
@@ -160,6 +241,63 @@ class Hostile(unittest.TestCase):
             self.assertIn(flag, cmd[:i])
         self.assertEqual([c for c in cmd if c.startswith(("-v", "--privileged", "--volume", "--device"))], ["-v"])
         self.assertEqual(cmd.count("-v"), 1)
+
+    def test_default_is_unchanged_v2_root_command(self):
+        cmd = self._cmd()
+        self.assertFalse([c for c in cmd if c.startswith(("--user", "--userns"))])
+
+    def test_unprivileged_without_installs_runs_the_whole_container_as_uid_1000(self):
+        cmd = self._cmd(unprivileged=True)
+        i = cmd.index("--")
+        self.assertIn("--userns=keep-id:uid=1000,gid=1000", cmd[:i])
+        self.assertIn("--user=1000:1000", cmd[:i])
+        self.assertIn("--cap-drop=ALL", cmd[:i])
+        self.assertFalse([c for c in cmd if c.startswith("--cap-add")])
+
+    def test_unprivileged_with_installs_starts_as_root_for_setup_only(self):
+        cmd = self._cmd(unprivileged=True, packages="jq")
+        self.assertIn("--user=0:0", cmd)
+        self.assertTrue([c for c in cmd if c.startswith("--cap-add")])   # setup needs them; blocks get none (see driver)
+
+    def test_unprivileged_install_under_rootless_keeps_both_rules(self):
+        cmd = self._cmd(unprivileged=True, packages="jq", rootless=True)
+        self.assertIn("--user=0:0", cmd)                              # root only for the install step
+        self.assertIn("--userns=keep-id:uid=1000,gid=1000", cmd)
+        self.assertEqual(cmd.count("--cap-add=DAC_READ_SEARCH"), 1)   # rootless install capability still granted
+        self.assertNotIn("--cap-add=DAC_READ_SEARCH", self._cmd(unprivileged=True, packages="jq"))
+
+    def test_driver_drops_privileges_for_blocks_only_after_a_root_setup(self):
+        from unittest import mock
+        d = Path(tempfile.mkdtemp())
+        (d / "README.md").write_text('<!-- docs-run: packages=jq -->\n```sh run\njq --version\n```\n')
+        (d / ".docs.toml").write_text('[run]\nunprivileged = true\npackages = ["jq"]\n')
+        seen = {}
+
+        def fake_run(cmd, **kw):
+            if not any(c.endswith(":/docs-run:Z") for c in cmd):   # podman ps / rm during cleanup
+                return subprocess.CompletedProcess(cmd, 0, stdout=b"" if not kw.get("text") else "")
+            work = next(Path(c.split(":")[0]) for c in cmd if c.endswith(":/docs-run:Z"))
+            seen["driver"] = (work / "driver.sh").read_text()
+            seen["cmd"] = cmd
+            return subprocess.CompletedProcess(cmd, 0)
+
+        with mock.patch.object(R.subprocess, "run", fake_run), mock.patch.object(R.shutil, "which", lambda x: "/bin/podman"):
+            R.main(["run", "--engine", "podman", "--root", str(d)])
+        drv = seen["driver"]
+        self.assertIn("setpriv --reuid=1000 --regid=1000 --clear-groups --bounding-set=-all --inh-caps=-all --no-new-privs bash", drv)
+        self.assertLess(drv.index("setup.log"), drv.index("setpriv"))   # setup runs first, as root
+        self.assertIn("--user=0:0", seen["cmd"])
+        # without unprivileged mode nothing changes
+        (d / ".docs.toml").write_text('[run]\npackages = ["jq"]\n')
+        with mock.patch.object(R.subprocess, "run", fake_run), mock.patch.object(R.shutil, "which", lambda x: "/bin/podman"):
+            R.main(["run", "--engine", "podman", "--root", str(d)])
+        self.assertNotIn("setpriv", seen["driver"])
+
+    def test_unprivileged_config_value_is_checked(self):
+        d = Path(tempfile.mkdtemp())
+        (d / ".docs.toml").write_text('[run]\nunprivileged = "yes"\n')
+        with self.assertRaises(R.MarkerError):
+            R.load_run(d)
 
     def test_network_only_when_allowlisted_and_installs_not_read_only(self):
         cmd = self._cmd(network=True, packages="jq")
@@ -317,6 +455,20 @@ class Checkout(unittest.TestCase):
         with self.assertRaises(R.MarkerError):
             R.load_run(self.d, "-x")
 
+    def test_first_adoption_pr_cannot_use_its_own_config_so_config_lands_first(self):
+        # The adopting PR adds .docs.toml (checkout default on) AND the workflow: its base has no .docs.toml,
+        # so the base-read configuration is empty and the checkout default is not applied: the block fails.
+        base = git(self.d, "rev-parse", "HEAD").strip()
+        (self.d / "README.md").write_text("```sh run\ntest -f data.txt\n```\n")
+        (self.d / ".docs.toml").write_text("[run]\ncheckout = true\n")
+        git(self.d, "add", "-A")
+        git(self.d, "commit", "-q", "-m", "adopt: config and workflow together")
+        self.assertEqual(self.run_local(), 0)                              # head's own config: would pass
+        self.assertEqual(self.run_local("--allowlist-ref", base), 1)       # base has no config: red, by design
+        # step 2 (workflow only): the base now holds .docs.toml and the same README passes
+        head = git(self.d, "rev-parse", "HEAD").strip()
+        self.assertEqual(self.run_local("--allowlist-ref", head), 0)
+
     def test_base_allowlist_still_works_when_the_pr_changes_the_file(self):
         (self.d / ".docs.toml").write_text(
             f'[run.images.ok]\nref = "example.org/x/y@sha256:{self.DIGEST}"\n')
@@ -327,6 +479,66 @@ class Checkout(unittest.TestCase):
         (self.d / "README.md").write_text("<!-- docs-run: image=ok -->\n```sh run\ntrue\n```\n")
         self.assertEqual(R.main(["list", "--root", str(self.d)]), 2)
         self.assertEqual(R.main(["list", "--root", str(self.d), "--allowlist-ref", base]), 0)
+
+
+class Fixtures(Checkout):
+    """fixtures=PATH runs a script of the checkout copy before the group's blocks."""
+
+    def doc(self, marker, fixture, block="test -f made-by-fixture.txt"):
+        (self.d / "tools").mkdir(exist_ok=True)
+        (self.d / "tools" / "fx.sh").write_text(fixture)
+        (self.d / "README.md").write_text(f"<!-- docs-run: checkout=1 {marker} -->\n```sh\n{block}\n```\n")
+        git(self.d, "add", "-A")
+        git(self.d, "commit", "-q", "-m", "fixtures")
+
+    def test_fixture_runs_from_the_copy_before_the_blocks(self):
+        self.doc("fixtures=tools/fx.sh", "touch made-by-fixture.txt\n")
+        self.assertEqual(self.run_local(), 0)
+        self.assertFalse((self.d / "made-by-fixture.txt").exists(), "the real checkout must not be written to")
+
+    def test_a_failing_fixture_fails_the_group_and_no_block_runs(self):
+        self.doc("fixtures=tools/fx.sh", "exit 3\n", block="touch ran.txt")
+        self.assertEqual(self.run_local("--json", str(self.d / "r.json")), 1)
+        import json
+        res = json.loads((self.d / "r.json").read_text())
+        self.assertIn("fixtures tools/fx.sh failed", json.dumps(res))
+
+    def test_without_the_fixture_the_block_fails(self):
+        self.doc("", "touch made-by-fixture.txt\n")
+        self.assertEqual(self.run_local(), 1)
+
+    def test_bad_paths_refused(self):
+        for bad in ("/etc/x", "../x.sh", "a/../b.sh", "-x.sh", "a//b.sh", "a b.sh", "$(id).sh", "a;b.sh", "a" * 101):
+            with self.assertRaises(R.MarkerError, msg=bad):
+                R.parse_directive(f'fixtures="{bad}"', "t")
+
+    def test_needs_checkout_mode(self):
+        (self.d / "README.md").write_text('<!-- docs-run: checkout=0 fixtures=tools/fx.sh -->\n```sh\ntrue\n```\n')
+        self.assertEqual(R.main(["list", "--root", str(self.d)]), 2)
+
+    def test_fixture_is_dropped_to_the_unprivileged_user_after_root_setup(self):
+        from unittest import mock
+        self.doc("packages=jq fixtures=tools/fx.sh", "true\n", block="true")
+        (self.d / ".docs.toml").write_text('[run]\nunprivileged = true\npackages = ["jq"]\n')
+        git(self.d, "add", "-A")
+        git(self.d, "commit", "-q", "-m", "cfg")
+        seen = {}
+
+        def fake_run(cmd, **kw):
+            if not any(c.endswith(":/docs-run:Z") for c in cmd):
+                if cmd[0] == "git":   # export_checkout and config reads are real
+                    return real_run(cmd, **kw)
+                return subprocess.CompletedProcess(cmd, 0, stdout="" if kw.get("text") else b"")
+            work = next(Path(c.split(":")[0]) for c in cmd if c.endswith(":/docs-run:Z"))
+            seen["driver"] = (work / "driver.sh").read_text()
+            return subprocess.CompletedProcess(cmd, 0)
+
+        real_run = subprocess.run
+        with mock.patch.object(R.subprocess, "run", fake_run), mock.patch.object(R.shutil, "which", lambda x: "/bin/podman"):
+            R.main(["run", "--engine", "podman", "--root", str(self.d)])
+        line = next(l for l in seen["driver"].splitlines() if "fx.sh" in l)
+        self.assertTrue(line.startswith("setpriv --reuid=1000"), line)
+        self.assertLess(seen["driver"].index("setup.log"), seen["driver"].index("fx.sh"))
 
 
 class FailUnmarked(unittest.TestCase):
