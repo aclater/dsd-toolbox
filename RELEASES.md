@@ -753,7 +753,7 @@ Converts DSF, DFF, WAV and FLAC files to DSD128 or DSD256, and PCM to DSD64. Sum
 
 Linux x86_64 from 0.1.0; macOS and Windows x64 from 0.1.1.
 
-- **0.1.1** ([notes](https://github.com/dsd-toolbox/dsd-upsample-rs/releases/tag/v0.1.1), 2026-11-27): release archives for
+- **0.1.1** ([notes](https://github.com/dsd-toolbox/dsd-upsample-rs/releases/tag/v0.1.1), 2026-11-26): release archives for
   macOS (universal, signed and notarised) and Windows x64 (not code-signed yet, named `-unsigned`), with the command line
   tool and the C library, SHA-256 sums and build provenance attestations; the output is byte-identical to 0.1.0's. Worker
   threads are joined before a conversion returns, and a damaged DSF header is reported as a format error. The tests and
