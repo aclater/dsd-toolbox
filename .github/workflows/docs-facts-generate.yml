@@ -28,6 +28,7 @@ jobs:
     name: docs-facts generate
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
+    timeout-minutes: 10   # a stuck job must not hold the runner (a pull request can feed any input)
     permissions:
       contents: write        # pushes the docs/facts-update branch; nothing else
     steps:

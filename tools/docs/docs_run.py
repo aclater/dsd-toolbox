@@ -43,6 +43,7 @@ import re
 import shlex
 import io
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -56,6 +57,9 @@ import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import docslib as dl  # noqa: E402
+
 CMD_LANGS = {"sh", "bash", "shell", "zsh", "console", "powershell", "ps1", "pwsh", "cmd", "bat"}
 RUNNABLE_LANGS = {"sh", "bash", "shell", "console"}
 # Images come ONLY from an allowlist: [run.images.<alias>] in the repository's .docs.toml, with a
@@ -67,6 +71,7 @@ BUILTIN_IMAGES = {DEFAULT_ALIAS: {
 }}
 REF_RE = re.compile(r"^[a-z0-9][a-z0-9._-]*(?::[0-9]+)?(?:/[a-z0-9][a-z0-9._-]*)+(?::[A-Za-z0-9._-]+)?@sha256:[0-9a-f]{64}$")
 ALIAS_RE = re.compile(r"^[a-z][a-z0-9-]{0,31}$")
+FIXTURES_RE = re.compile(r"^[A-Za-z0-9_.][A-Za-z0-9._/-]{0,99}$")
 GROUP_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$")
 PACKAGE_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._+-]{0,127}$")
 CTRL_RE = re.compile(r"[\x00-\x1f\x7f]")
@@ -81,6 +86,10 @@ INSTALL_CAPS = ["CHOWN", "DAC_OVERRIDE", "FOWNER", "FSETID", "SETGID", "SETUID",
 # and `sudo` then fails in its PAM account check ("cannot retrieve authentication info"). Under rootful
 # podman it would let the container use open_by_handle_at on the host's files, so it is not granted there.
 ROOTLESS_INSTALL_CAPS = ["DAC_READ_SEARCH"]
+UNPRIV_UID = 1000   # the unprivileged user blocks run as (--unprivileged / [run] unprivileged = true)
+# Root in the container only runs allowlisted package-install setup; blocks then drop to UNPRIV_UID with no capabilities.
+DROP_PRIVS = (f"setpriv --reuid={UNPRIV_UID} --regid={UNPRIV_UID} --clear-groups "
+              "--bounding-set=-all --inh-caps=-all --no-new-privs")
 CONTAINER_HOME = "/docs-run/home"   # on the work folder (host disk), so installs and reports do not fill memory
 FENCE_RE = re.compile(r"^(\s*)(`{3,}|~{3,})\s*([A-Za-z0-9_+-]*)\s*(.*)$")
 DIRECTIVE_RE = re.compile(r"^\s*<!--\s*docs-run:(.*?)-->\s*$")
@@ -143,6 +152,10 @@ def check_value(k: str, v: str, where: str) -> str:
         for pkg in v.split(","):
             if not PACKAGE_RE.match(pkg):
                 raise MarkerError(f"{where}: packages= entry {pkg!r} is not a plain package name")
+    if k == "fixtures":
+        if not FIXTURES_RE.match(v) or ".." in v.split("/") or "//" in v:
+            raise MarkerError(f"{where}: fixtures= must be a plain path inside the checkout "
+                              f"(letters, digits, '.', '_', '-', '/'; no '..', no leading '/' or '-')")
     if k == "checkout" and v not in ("0", "1"):
         raise MarkerError(f"{where}: checkout= must be 1 (start in a copy of the checkout) or 0")
     if k == "timeout":
@@ -169,7 +182,7 @@ def parse_directive(text: str, where: str) -> tuple[dict, list]:
         k, v = t.split("=", 1)
         if k == "expect":
             expects.append(check_value(k, v, where))
-        elif k in {"image", "packages", "setup", "drop", "group", "timeout", "skip", "checkout"}:
+        elif k in {"image", "packages", "setup", "drop", "group", "timeout", "skip", "checkout", "fixtures"}:
             opts[k] = check_value(k, v, where)
         else:
             raise MarkerError(f"{where}: unknown docs-run key {k!r}")
@@ -243,7 +256,15 @@ def load_run(root: Path, ref: str | None = None) -> dict:
     checkout = run.get("checkout", False)
     if not isinstance(checkout, bool):
         raise MarkerError(f"{where}: [run] checkout must be true or false")
-    return {"images": images, "packages": _check_packages(run.get("packages", []), where), "checkout": checkout}
+    unpriv = run.get("unprivileged", False)
+    if not isinstance(unpriv, bool):
+        raise MarkerError(f"{where}: [run] unprivileged must be true or false")
+    try:
+        exclude = dl.parse_run_exclude(raw, where)
+    except dl.ConfigError as e:
+        raise MarkerError(str(e)) from e
+    return {"images": images, "packages": _check_packages(run.get("packages", []), where), "checkout": checkout,
+            "exclude": exclude, "unprivileged": unpriv}
 
 
 def load_images(root: Path, ref: str | None = None) -> dict:
@@ -360,11 +381,12 @@ def extract(path: Path, rel: str) -> list[Block]:
     return blocks
 
 
-def collect(root: Path) -> list[Block]:
+def collect(root: Path, exclude: list[str] | None = None) -> list[Block]:
     files = []
     for dp, dn, fn in os.walk(root):
         dn[:] = sorted(d for d in dn if d not in SKIP_DIRS)
-        files += [Path(dp) / f for f in sorted(fn) if f.endswith(".md")]
+        files += [Path(dp) / f for f in sorted(fn) if f.endswith(".md")
+                  and not dl.matches(str((Path(dp) / f).relative_to(root)), exclude or [])]
     # README.md first, then docs/ in path order
     files.sort(key=lambda p: (p.relative_to(root).parts != ("README.md",), str(p.relative_to(root))))
     out: list[Block] = []
@@ -383,7 +405,7 @@ def groups_of(blocks: list[Block]) -> dict[tuple[str, str], list[Block]]:
 
 
 def group_settings(bs: list[Block], images: dict | None = None, cfg: dict | None = None) -> dict:
-    s = {"image": DEFAULT_ALIAS, "packages": "", "setup": "", "timeout": str(DEFAULT_TIMEOUT)}
+    s = {"image": DEFAULT_ALIAS, "packages": "", "setup": "", "fixtures": "", "timeout": str(DEFAULT_TIMEOUT)}
     for b in bs:
         for k in s:
             if k in b.opts:
@@ -394,7 +416,11 @@ def group_settings(bs: list[Block], images: dict | None = None, cfg: dict | None
     # checkout mode: a group starts in a copy of the checkout when any block asks (checkout=1), or the
     # repository's [run] checkout = true makes it the default and no block says checkout=0
     asks = [b.opts["checkout"] for b in bs if "checkout" in b.opts]
+    s["unprivileged"] = bool(cfg and cfg.get("unprivileged"))
     s["checkout"] = "1" in asks or (bool(cfg and cfg["checkout"]) and "0" not in asks)
+    if s["fixtures"] and not s["checkout"]:
+        raise MarkerError(f"{bs[0].file}:{bs[0].line}: fixtures= runs a script from the checkout copy, "
+                          f"so the group needs checkout mode (checkout=1 or [run] checkout = true)")
     if images is not None:
         if s["image"] not in images:
             raise MarkerError(f"{bs[0].file}:{bs[0].line}: image={s['image']} is not in the allowlist "
@@ -453,6 +479,11 @@ def podman_command(s: dict, work: Path, name: str, run_id: str, args, rootless: 
         cmd += [f"--cap-add={c}" for c in INSTALL_CAPS + (ROOTLESS_INSTALL_CAPS if rootless else [])]
     else:
         cmd += ["--read-only", "--tmpfs", "/tmp:rw,mode=1777"]
+    if s.get("unprivileged") or getattr(args, "unprivileged", False):
+        # keep-id maps the host user to UNPRIV_UID, so the work folder is writable by the blocks and removable by us.
+        # Without installs the whole container is that user; with installs it starts as root for setup only.
+        cmd += [f"--userns=keep-id:uid={UNPRIV_UID},gid={UNPRIV_UID}",
+                f"--user={0 if installs else UNPRIV_UID}:{0 if installs else UNPRIV_UID}"]
     if args.keep_going:
         cmd += ["-e", "DOCS_RUN_KEEP_GOING=1"]
     return cmd + ["--", s["ref"], "bash", "/docs-run/driver.sh"]
@@ -461,8 +492,35 @@ def podman_command(s: dict, work: Path, name: str, run_id: str, args, rootless: 
 # --------------------------------------------------------------------------- running
 
 
+class UnsafeResult(Exception):
+    """A result file written by the (untrusted) container is not a plain regular file."""
+
+
+def read_result(path: Path, limit: int = 4_000_000) -> str:
+    """Read a file the container wrote, without following symlinks; regular files only."""
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except OSError as e:
+        raise UnsafeResult(f"{path.name}: cannot be read safely ({e.strerror})") from e
+    try:
+        if not stat.S_ISREG(os.fstat(fd).st_mode):
+            raise UnsafeResult(f"{path.name}: not a regular file")
+        with os.fdopen(fd, "rb", closefd=False) as f:
+            return f.read(limit).decode("utf-8", errors="replace")
+    finally:
+        os.close(fd)
+
+
+def read_rc(path: Path) -> int:
+    text = read_result(path, 64).strip()
+    if not re.fullmatch(r"[0-9]{1,3}", text):
+        raise UnsafeResult(f"{path.name}: exit status is not a number")
+    return int(text)
+
+
 def run_group(key, bs: list[Block], args, run_id: str, images: dict, cfg: dict | None = None) -> None:
     s = group_settings(bs, images, cfg)
+    s["unprivileged"] = s["unprivileged"] or bool(getattr(args, "unprivileged", False))
     work = Path(tempfile.mkdtemp(prefix="docs-run-", dir=args.tmpdir))
     try:
         setup = s["setup"]
@@ -475,11 +533,16 @@ def run_group(key, bs: list[Block], args, run_id: str, images: dict, cfg: dict |
         if setup and (args.engine == "podman" or args.run_setup):
             d = "/docs-run" if args.engine == "podman" else str(work)
             driver += [f"( {setup} ) > {d}/setup.log 2>&1 || {{ echo 99 > {d}/setup.rc; exit 0; }}"]
+        # the drop only applies when the container started as root for setup (podman engine, unprivileged, installs)
+        drop = DROP_PRIVS + " " if (s["unprivileged"] and args.engine == "podman" and (s["setup"] or s["packages"])) else ""
+        if s["fixtures"]:   # a script of the checkout copy, run after setup and never with setup's privileges
+            d = "/docs-run" if args.engine == "podman" else str(work)
+            driver += [f"{drop}bash ./{s['fixtures']} > {d}/fixtures.log 2>&1 || {{ echo 1 > {d}/fixtures.rc; exit 0; }}"]
         for n, b in enumerate(bs):
             (work / f"b{n}.sh").write_text("set -eo pipefail\n" + b.code)
             driver += [
                 f"echo 'DOCS-RUN-START {n}'",
-                f"S=$(date +%s%N); bash {{D}}/b{n}.sh > {{D}}/o{n}.log 2>&1; echo $? > {{D}}/rc{n}; "
+                f"S=$(date +%s%N); {drop}bash {{D}}/b{n}.sh > {{D}}/o{n}.log 2>&1; echo $? > {{D}}/rc{n}; "
                 f"E=$(date +%s%N); echo $(( (E - S) / 1000000 )) > {{D}}/t{n}",
                 f"[ \"$(cat {{D}}/rc{n})\" = 0 ] || [ -n \"${{DOCS_RUN_KEEP_GOING:-}}\" ] || exit 0",
             ]
@@ -505,22 +568,36 @@ def run_group(key, bs: list[Block], args, run_id: str, images: dict, cfg: dict |
         except subprocess.TimeoutExpired:
             for b in bs:
                 b.problems.append(f"group timed out after {s['timeout']} s")
-        setup_rc = work / "setup.rc"
-        if setup_rc.exists():
-            log = (work / "setup.log").read_text()[-2000:]
+        if os.path.lexists(work / "setup.rc"):   # lexists: a dangling symlink still counts as a failure
+            try:
+                log = read_result(work / "setup.log")[-2000:]
+            except (UnsafeResult, OSError):
+                log = "(setup.log unreadable)"
             for b in bs:
                 b.result, b.problems = "FAIL", [f"container setup failed: {log.strip().splitlines()[-1:]}"]
             return
+        if os.path.lexists(work / "fixtures.rc"):
+            try:
+                log = read_result(work / "fixtures.log")[-2000:]
+            except (UnsafeResult, OSError):
+                log = "(fixtures.log unreadable)"
+            for b in bs:
+                b.result, b.problems = "FAIL", [f"fixtures {s['fixtures']} failed: {log.strip().splitlines()[-1:]}"]
+            return
         for n, b in enumerate(bs):
             rcf = work / f"rc{n}"
-            if not rcf.exists():
+            if not os.path.lexists(rcf):
                 b.result = "NOT-REACHED" if not b.problems else "FAIL"
                 continue
-            b.rc = int(rcf.read_text().strip() or 1)
-            b.output = (work / f"o{n}.log").read_text(errors="replace")
             try:
-                b.seconds = float((work / f"t{n}").read_text().strip() or 0) / 1000.0
-            except (OSError, ValueError):
+                b.rc = read_rc(rcf)
+                b.output = read_result(work / f"o{n}.log")
+            except (UnsafeResult, OSError) as e:
+                b.result, b.problems = "FAIL", [f"result file rejected: {e}"]
+                continue
+            try:
+                b.seconds = float(read_result(work / f"t{n}").strip() or 0) / 1000.0
+            except (UnsafeResult, OSError, ValueError):
                 b.seconds = 0.0
             if b.rc != 0:
                 b.problems.append(f"exit status {b.rc}")
@@ -590,6 +667,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="with --engine local: also run packages=/setup= here (only inside a disposable container, as root)")
     ap.add_argument("--memory", default="4g")
     ap.add_argument("--cpus", default="4")
+    ap.add_argument("--unprivileged", action="store_true",
+                    help="run blocks as an unprivileged user (podman engine; also [run] unprivileged = true)")
     ap.add_argument("--keep-going", action="store_true", help="run the rest of a group after a failure")
     ap.add_argument("--keep-work", action="store_true")
     ap.add_argument("--tmpdir", default=None)
@@ -614,11 +693,11 @@ def main(argv: list[str] | None = None) -> int:
             print(f"ERROR cannot read the latest release of {a.version_of}: {e}", file=sys.stderr)
             return 2
     try:
-        blocks = collect(root)
+        cfg = load_run(root, a.allowlist_ref)   # [run] exclude is read from the same trusted revision as the allowlist
+        blocks = collect(root, cfg["exclude"])
         if a.only:
             blocks = [b for b in blocks if b.file == a.only]
         groups = groups_of(blocks)
-        cfg = load_run(root, a.allowlist_ref)
         images = cfg["images"]
         for bs in groups.values():
             group_settings(bs, images, cfg)

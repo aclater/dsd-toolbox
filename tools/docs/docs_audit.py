@@ -75,7 +75,7 @@ def checklist(root: Path, cfg: dl.Config, version: str) -> str:
     for f in files:
         for ln in dl.scan(f.read_text(errors="replace")):
             if ln.kind in ("fence", "prose"):
-                src = ln.text if ln.kind == "fence" else " ".join(m[0] for m in dl.CODE_SPAN_RE.finditer(ln.text))
+                src = ln.text if ln.kind == "fence" else " ".join(ln.text[a:b] for a, b in dl.code_spans(ln.text))
                 for m in re.finditer(r"(?<![\w-])--[a-z][a-z0-9]*(?:-[a-z0-9]+)*", src):
                     opts.setdefault(m[0], set()).add(dl.rel(root, f))
     out += ["## Command-line options", "",

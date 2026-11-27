@@ -44,6 +44,8 @@ reason = "bot wall: opened by hand"
 
 Every key is optional. A project without `.docs.toml` is checked with the defaults and the name of its folder.
 
+Land `.docs.toml` in its own pull request first and add the workflow calls in a second one: `docs-run` reads its allowlists from the base commit, so one combined pull request can be red. See [the tools README](../tools/docs/README.md#first-adoption-two-pull-requests-in-this-order). Where `docs-links.yml` covers a project's links, remove its lychee job.
+
 ## Settings
 
 All keys in `.docs.toml` are optional.
@@ -61,10 +63,11 @@ All keys in `.docs.toml` are optional.
 | `[readme] badges`, `title`, `sections`, `allow_extra`, `pitch_max` | Override the badge set derived from the workflows and manifests, the title, the section list, extra sections allowed, and the pitch length | derived |
 | `[links] exclude`, `exclude_files`, `[[links.allow]]` | URL patterns and files not checked, and URLs not fetched because the site blocks scripts (with a reason) | the shared list in `tools/docs/links-allow.toml` |
 | `[run] checkout`, `packages`, `[run.images.<alias>]` | Checkout mode for every docs-run block, the package names a block may install, and extra digest-pinned images (see [tools/docs](../tools/docs/README.md)) | `false`, none, the built-in image |
+| `[run] exclude`, `unprivileged` | Markdown files no docs tool reads (`CLAUDE.md`, `AGENTS.md`), and running docs-run blocks as an unprivileged user (see [tools/docs](../tools/docs/README.md#unprivileged-blocks-and-fixtures)) | none, `false` |
 | `[touched] code`, `docs`, `ignore` | Path globs: a change to `code` needs a change to `docs`; `ignore` never counts as code | source folders, README, `docs/` |
 | `[audit] help_command`, `history` | A command whose output lists the options the docs may name; files that keep history (version mentions there are not flagged) | none |
 
-The clean-side repositories do not fetch these tools; they get the same rules as a written outline.
+The clean-room projects keep their own docs; these tools are not run on them.
 
 ## Run them locally
 

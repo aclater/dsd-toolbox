@@ -19,6 +19,7 @@ jobs:
   projects:
     name: audit ${{ matrix.repo }}
     runs-on: ubuntu-latest
+    timeout-minutes: 30   # a stuck job must not hold the runner (a pull request can feed any input)
     strategy:
       fail-fast: false
       matrix:
